@@ -80,12 +80,12 @@ public class ChamadoService {
 
     private ChamadoResponseDTO converterParaResponseDTO(Chamado chamado) {
         String nomeResponsavel = (chamado.getResponsavel() != null && chamado.getResponsavel().getCargo() != null)
-                ? chamado.getResponsavel().getEmail() : "Não atribuído";
+                ? chamado.getResponsavel().getNome() : "Não atribuído";
 
         return new ChamadoResponseDTO(
                 chamado.getId(),
                 chamado.getProtocolo(),
-                chamado.getSolicitante().getEmail(), // Ajuste caso adicionem "Nome" na entidade Usuário
+                chamado.getSolicitante().getNome(),//Ajustado para "nome"
                 chamado.getSolicitante().getEmail(),
                 nomeResponsavel,
                 chamado.getCategoria(),

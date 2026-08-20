@@ -29,6 +29,9 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String nome;
+
     @Email
     @Column(nullable = false, unique = true)
     private String email;

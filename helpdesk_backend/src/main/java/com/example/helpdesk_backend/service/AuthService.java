@@ -20,7 +20,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     public Usuario registrarUsuario(UserCreateDTO userCreateDTO) {
-        if (userCreateDTO.email().toLowerCase().endsWith("@helpdesk.com")){
+        if (!userCreateDTO.email().toLowerCase().endsWith("@helpdesk.com")){
             //Aplicando a RN02:Domínio restrito para a empresa HelpDesk
             throw new BusinessException("Domínio inválido. Sistema permite acesso apenas a emails @helpdesk.com.");
         }
@@ -30,6 +30,7 @@ public class AuthService {
         }
 
         Usuario novUsuario = new Usuario();
+        novUsuario.setNome(userCreateDTO.nome());
         novUsuario.setEmail(userCreateDTO.email());
         novUsuario.setSenha(passwordEncoder.encode(userCreateDTO.senha()));
         novUsuario.setPerfil(userCreateDTO.perfil());
