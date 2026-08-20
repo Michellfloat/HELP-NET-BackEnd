@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.helpdesk_backend.dtos.request.ComplementarPerfilDTO;
 import com.example.helpdesk_backend.dtos.request.UserCreateDTO;
+import com.example.helpdesk_backend.dtos.request.UsuarioUpdateDTO;
 import com.example.helpdesk_backend.dtos.response.UsuarioResponseDTO;
 import com.example.helpdesk_backend.service.AuthService;
 import com.example.helpdesk_backend.service.UsuarioService;
