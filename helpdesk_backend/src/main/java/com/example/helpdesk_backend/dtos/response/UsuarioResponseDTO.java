@@ -6,7 +6,6 @@ import com.example.helpdesk_backend.model.enums.Perfil;
 //DTO de Resposta (Nunca retorna a senha)
 public record UsuarioResponseDTO(
     Long id,
-    String nome,
     String email,
     String cargo,
     String setor,

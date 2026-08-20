@@ -8,8 +8,8 @@ public enum NivelAntendente {
     NIVEL_II("NIVEL_II"),
     NIVEL_III("NIVEL_III");
 
-    private String nivel;
-    private NivelAntendente(String nivel) {
-        this.nivel = nivel;
+    private String nivelAtendente;
+    private NivelAntendente(String nivelAtendente) {
+        this.nivelAtendente = nivelAtendente;
     }
 }   

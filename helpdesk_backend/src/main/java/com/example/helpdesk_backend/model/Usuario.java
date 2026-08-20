@@ -17,6 +17,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+
 @Entity
 @Table(name = "tab_usuarios")
 @Data //Serve para gerar os getters e setters automaticamente(além de outros métodos como equals, hashCode e toString)
