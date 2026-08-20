@@ -57,6 +57,7 @@ public class UsuarioService {
             throw new BusinessException("Já existe um usuário cadastrado com o email informado.");
         }
         //Atualizando os campos permitidos
+        usuario.setNome(dto.nome());
         usuario.setCargo(dto.cargo());
         usuario.setSetor(dto.setor());
         usuario.setEmail(dto.email());
@@ -74,6 +75,7 @@ public class UsuarioService {
     private UsuarioResponseDTO converterParaResponseDTO(Usuario usuario) {
         return new UsuarioResponseDTO(
                 usuario.getId(),
+                usuario.getNome(),
                 usuario.getEmail(),
                 usuario.getCargo(),
                 usuario.getSetor(),
