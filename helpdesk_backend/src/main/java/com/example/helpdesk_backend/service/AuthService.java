@@ -1,5 +1,7 @@
 package com.example.helpdesk_backend.service;
 
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +11,7 @@ import com.example.helpdesk_backend.dtos.response.LoginResponseDTO;
 import com.example.helpdesk_backend.exception.BusinessException;
 import com.example.helpdesk_backend.model.Usuario;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
+import com.example.helpdesk_backend.security.JwtService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +21,10 @@ public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+
+    private final AuthenticationManager authenticationManager; //Recentemente adicionado
+
+    private final JwtService jwtService;
 
     public Usuario registrarUsuario(UserCreateDTO userCreateDTO) {
         if (!userCreateDTO.email().toLowerCase().endsWith("@helpdesk.com")){
@@ -43,13 +50,30 @@ public class AuthService {
     //Lógica para autenticcação
 
     public LoginResponseDTO autenticarUsuario(LoginRequestDTO loginRequestDTO) {
-        // TODO: A implementação completa aguarda o JwtService e o AuthenticationManager do Spring Security.
-        // O fluxo será:
-        // 1. Validar credenciais via AuthenticationManager.
-        // 2. Buscar o usuário autenticado.
-        // 3. Gerar o Token JWT.
-        // 4. Retornar o LoginResponseDTO(token).
+//--------------------------------------------------------------------------------        
+        //1°: Validando as credenciais via AuthenticationManager
 
-        return new LoginResponseDTO("token_jwt_temporario", loginRequestDTO.email(), "perfil_temporario");
+        var authenticationToken = new UsernamePasswordAuthenticationToken(loginRequestDTO.email(), loginRequestDTO.senha());
+
+        authenticationManager.authenticate(authenticationToken);
+
+//-------------------------------------------------------------------------------- //--------------------------------------------------------------------------------
+
+        //2°:Buscar o usuário autenticado
+        Usuario usuario = usuarioRepository.findByEmail(loginRequestDTO.email())
+        .orElseThrow(() -> new BusinessException("Usuário não encontrado."));
+//---------------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------------
+
+        //3°: Gerar o Token JWT real
+        String token = jwtService.gerarToken(usuario);
+
+//---------------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------------
+
+        //4°:Retorna a resposta completa
+        return new LoginResponseDTO(token, usuario.getEmail(), usuario.getPerfil().name());
     }
 }
