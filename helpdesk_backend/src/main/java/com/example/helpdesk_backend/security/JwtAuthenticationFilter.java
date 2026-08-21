@@ -2,6 +2,7 @@ package com.example.helpdesk_backend.security;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -36,7 +37,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                 Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
                 if (usuario != null) {
-                    var authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + usuario.getPerfil().name()));
+                    String perfilNome = usuario.getPerfil().name();
+                    
+                    // Registra agora tanto 'ATENDENTE' quanto 'ROLE_ATENDENTE' para garantir compatibilidade total
+                    var authorities = List.of(
+                        new SimpleGrantedAuthority(perfilNome),
+                        new SimpleGrantedAuthority("ROLE_" + perfilNome)
+                    );
 
                     var authentication = new UsernamePasswordAuthenticationToken(usuario.getEmail(), null, authorities);
 
@@ -50,9 +57,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 
     private String recuperarToken(HttpServletRequest request){
         String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer")) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return null;
         }
-        return authHeader.replace("Bearer", "");
+        return authHeader.substring(7); // Remove "Bearer " (com o espaço) corretamente
     }
 }
