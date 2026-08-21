@@ -37,16 +37,23 @@ public class SecurityConfig {
                         // Libera apenas o endpoint de login
                         //1-Rota pública de autenticação (login) que não requer autenticação
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+
                         // 2. Criação de Usuários: Apenas Atendentes (RF04)
-                        .requestMatchers(HttpMethod.POST,"/usuarios").hasRole("ATENDENTE")
-                        // 3. Edição/Listagem de Usuários
+                        .requestMatchers(HttpMethod.POST, "/usuarios").hasRole("ATENDENTE")
                         .requestMatchers(HttpMethod.GET, "/usuarios").hasRole("ATENDENTE")
                         .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasRole("ATENDENTE")
-                        // 4. Complemento de Perfil (Primeiro Acesso) - Aberto para qualquer usuário autenticado
+
+                        // 3. Edição/Listagem de Usuários
                         .requestMatchers(HttpMethod.PATCH, "/usuarios/complementar-perfil").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasRole("ATENDENTE")
+                        // 4. Complemento de Perfil (Primeiro Acesso) - Aberto para qualquer usuário autenticado
+                        .requestMatchers(HttpMethod.GET, "/chamados").hasRole("ATENDENTE")
+                        .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasRole("ATENDENTE")
+
                         // 5. Chamados e Anexos - Qualquer usuário autenticado
-                        .requestMatchers("/chamados/**").authenticated()
-                        .requestMatchers("/anexos/**").authenticated()
+                        .requestMatchers("/chamados/*/anexos").authenticated()
+                        .requestMatchers("/anexos/*/download").authenticated()
+                        
                         // Restringe qualquer outra requisição para usuários autenticados
                         .anyRequest().authenticated()
                 )
