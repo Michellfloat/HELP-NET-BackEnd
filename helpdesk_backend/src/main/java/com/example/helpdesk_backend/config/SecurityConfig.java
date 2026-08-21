@@ -39,16 +39,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
 
                         // 2. Criação de Usuários: Apenas Atendentes (RF04)
-                        .requestMatchers(HttpMethod.POST, "/usuarios").hasAuthority("ATENDENTE")
-                        .requestMatchers(HttpMethod.GET, "/usuarios").hasAuthority("ATENDENTE")
-                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAuthority("ATENDENTE")
+                        .requestMatchers(HttpMethod.POST, "/usuarios").hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
+                        .requestMatchers(HttpMethod.GET, "/usuarios").hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
 
                         // 3. Edição/Listagem de Usuários
                         .requestMatchers(HttpMethod.PATCH, "/usuarios/complementar-perfil").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAuthority("ATENDENTE")
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
                         // 4. Complemento de Perfil (Primeiro Acesso) - Aberto para qualquer usuário autenticado
-                        .requestMatchers(HttpMethod.GET, "/chamados").hasAuthority("ATENDENTE")
-                        .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAuthority("ATENDENTE")
+                        .requestMatchers(HttpMethod.GET, "/chamados")
+                        .hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
+                        .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
 
                         // 5. Chamados e Anexos - Qualquer usuário autenticado
                         .requestMatchers("/chamados/*/anexos").authenticated()
