@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -62,5 +64,17 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
+public ResponseEntity<StandardError> handleAuthenticationException(Exception e, HttpServletRequest request) {
+    HttpStatus status = HttpStatus.UNAUTHORIZED; // 401
+    StandardError err = new StandardError(
+            LocalDateTime.now(),
+            status.value(),
+            "E-mail ou senha inválidos.",
+            request.getRequestURI()
+    );
+    return ResponseEntity.status(status).body(err);
     }
 }
