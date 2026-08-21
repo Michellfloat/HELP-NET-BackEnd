@@ -1,6 +1,8 @@
 package com.example.helpdesk_backend.security;
 
-import java.util.Collections;
+
+import java.util.List;
+
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -25,7 +27,15 @@ public class UserDetailServiceImpl implements UserDetailsService{
         Usuario usuario = usuarioRepository.findByEmail(email)
         .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com o e-mail: " + email));
 
-        return new User(usuario.getEmail(), usuario.getSenha(), Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + usuario.getPerfil().name()))
-    );
+        String perfilNome = usuario.getPerfil().name();
+
+        return new User(
+                usuario.getEmail(),
+                usuario.getSenha(),
+                List.of(
+                        new SimpleGrantedAuthority(perfilNome),
+                        new SimpleGrantedAuthority("ROLE_" + perfilNome)
+                )
+        );
     }
 }
