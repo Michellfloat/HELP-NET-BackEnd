@@ -10,7 +10,6 @@ import java.util.List;
 
 @Repository
 public interface ChamadoRepository  extends JpaRepository<Chamado, Long> {
-    long countBySolicitanteAnStatusIn(Usuario solicitante, List<StatusChamado> status);
+    long countBySolicitanteAndStatusIn(Usuario solicitante, List<StatusChamado> status);
 
-    long countBySolicitanteAndStatusIn(Usuario solicitante, List<StatusChamado> aberto);
 }
