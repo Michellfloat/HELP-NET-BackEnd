@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,8 +34,9 @@ public class UsuarioController {
     private final AuthService authService;
 
     @PatchMapping("/complementar-perfil")
-    public ResponseEntity<UsuarioResponseDTO>completarPerfil(@RequestBody @Valid ComplementarPerfilDTO dto, Authentication authentication){
-        //Extrair o email do usuário autenticado
+    public ResponseEntity<UsuarioResponseDTO> completarPerfil(@RequestBody @Valid ComplementarPerfilDTO dto,
+            Authentication authentication) {
+        // Extrair o email do usuário autenticado
         String email = authentication.getName();
 
         return ResponseEntity.ok(usuarioService.completarPerfil(email, dto));
@@ -46,14 +48,21 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<Void>criarUsuario(@RequestBody @Valid UserCreateDTO dto){
-        //Delegando a criação do usuário para o AuthService
+    public ResponseEntity<Void> criarUsuario(@RequestBody @Valid UserCreateDTO dto) {
+        // Delegando a criação do usuário para o AuthService
         authService.registrarUsuario(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioResponseDTO> editarUsuario(@PathVariable Long id, @RequestBody @Valid UsuarioUpdateDTO dto) {
+    public ResponseEntity<UsuarioResponseDTO> editarUsuario(@PathVariable Long id,
+            @RequestBody @Valid UsuarioUpdateDTO dto) {
         return ResponseEntity.ok(usuarioService.editarUsuario(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarUsuario(@PathVariable Long id) {
+        usuarioService.deletarUsuario(id);
+        return ResponseEntity.noContent().build();
     }
 }

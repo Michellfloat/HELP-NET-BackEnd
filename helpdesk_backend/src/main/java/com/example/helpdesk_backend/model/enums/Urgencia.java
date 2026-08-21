@@ -5,8 +5,9 @@ import lombok.Getter;
 @Getter
 public enum Urgencia {
     NORMAL("Normal"),
-    MEDIO("Médio"),
-    CRITICO("Crítico");
+    MEDIA("Média"),
+    ALTA("Alta"),
+    CRITICA("Crítica");
 
     private final String descricao;
 

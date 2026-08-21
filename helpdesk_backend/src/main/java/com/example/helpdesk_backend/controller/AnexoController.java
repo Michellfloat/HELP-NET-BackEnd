@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,39 +30,56 @@ public class AnexoController {
     private final AnexoService anexoService;
 
     @PostMapping("/chamados/{chamadoId}/anexos")
-    public ResponseEntity<AnexoResponseDTO>uploadAnexo(
-        @PathVariable Long chamadoId,
-        @RequestParam("file")MultipartFile file,
-        Authentication authentication
-    ){
+    public ResponseEntity<AnexoResponseDTO> uploadAnexo(
+            @PathVariable Long chamadoId,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
         String email = authentication.getName();
         AnexoResponseDTO response = anexoService.salvarAnexo(chamadoId, file, email);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/chamados/{chamadoId}/anexos")
-    public ResponseEntity<List<AnexoResponseDTO>>listarAnexos(
-        @PathVariable Long chamadoId,
-        Authentication authentication
-    ){
+    public ResponseEntity<List<AnexoResponseDTO>> listarAnexos(
+            @PathVariable Long chamadoId,
+            Authentication authentication) {
         String email = authentication.getName();
         List<AnexoResponseDTO> anexos = anexoService.listarAnexosDoChamado(chamadoId, email);
-        
+
         return ResponseEntity.ok(anexos);
     }
 
     @GetMapping("/anexos/{anexoId}/download")
-    public ResponseEntity<Resource>downloadAnexo(
-        @PathVariable Long anexoId,
-        Authentication authentication
-    ){
+    public ResponseEntity<Resource> downloadAnexo(
+            @PathVariable Long anexoId,
+            Authentication authentication) {
         String email = authentication.getName();
         Resource file = anexoService.carregarArquivoComoRecurso(anexoId, email);
         Anexo anexo = anexoService.buscarPorId(anexoId);
 
         return ResponseEntity.ok()
-        .contentType(MediaType.parseMediaType(anexo.getTipoArquivo()))
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename\"" + anexo.getNomeArquivo() + "\"")
-        .body(file);
+                .contentType(MediaType.parseMediaType(anexo.getTipoArquivo()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename\"" + anexo.getNomeArquivo() + "\"")
+                .body(file);
+    }
+
+    @DeleteMapping("/anexos/{anexoId}")
+    public ResponseEntity<Void> deletarAnexo(
+            @PathVariable Long anexoId,
+            Authentication authentication) {
+        String email = authentication.getName();
+        anexoService.deletarAnexo(anexoId, email);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Adicionar ao AnexoController.java
+    @DeleteMapping("/chamados/{chamadoId}/anexos/{anexoId}")
+    public ResponseEntity<Void> deletarAnexoDoChamado(
+            @PathVariable Long chamadoId,
+            @PathVariable Long anexoId,
+            Authentication authentication) {
+        String email = authentication.getName();
+        anexoService.deletarAnexo(anexoId, email);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -37,33 +37,35 @@ public class AnexoService {
     private final Path diretorioUploads = Paths.get("uploads");
 
     @Transactional
-    public AnexoResponseDTO salvarAnexo(Long chamadoId, MultipartFile file, String emailUsuarioLogado){
+    public AnexoResponseDTO salvarAnexo(Long chamadoId, MultipartFile file, String emailUsuarioLogado) {
         if (file.isEmpty()) {
             throw new BusinessException("O arquivo enviado está vazio.");
         }
 
-        //RNF04: Limite de tamanho (Exemplo: máximo 10MB)
-        long limiteMaximo = 10 * 1024 * 1024; //->10 MB
+        // RNF04: Limite de tamanho (Exemplo: máximo 10MB)
+        long limiteMaximo = 10 * 1024 * 1024; // ->10 MB
 
         if (file.getSize() > limiteMaximo) {
             throw new BusinessException("O tamanho do arquivo excede o limite máximo permitido de 10MB.");
         }
 
         Chamado chamado = chamadoRepository.findById(chamadoId)
-        .orElseThrow(() -> new BusinessException("Chamado não encontrado."));
+                .orElseThrow(() -> new BusinessException("Chamado não encontrado."));
 
         Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado)
-        .orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
+                .orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
 
-        // TODO: Validar se o chamado está fechado/finalizado. Não permitir anexos em chamados encerrados.
-        // TODO: Validar visibilidade/permissão de Fila e Escalonamento (Garantir que atendentes sem acesso à fila não alterem o chamado).
+        // TODO: Validar se o chamado está fechado/finalizado. Não permitir anexos em
+        // chamados encerrados.
+        // TODO: Validar visibilidade/permissão de Fila e Escalonamento (Garantir que
+        // atendentes sem acesso à fila não alterem o chamado).
 
         try {
             if (!Files.exists(diretorioUploads)) {
                 Files.createDirectories(diretorioUploads);
             }
 
-            //Gera nome único no disco para evitar sobrescrever arquivos com o mesmo nome
+            // Gera nome único no disco para evitar sobrescrever arquivos com o mesmo nome
             String nomeOriginal = file.getOriginalFilename();
             String nomeUnico = UUID.randomUUID() + "_" + (nomeOriginal != null ? nomeOriginal : "anexo");
             Path caminhoDestino = diretorioUploads.resolve(nomeUnico);
@@ -87,24 +89,26 @@ public class AnexoService {
         }
     }
 
-    public List<AnexoResponseDTO>listarAnexosDoChamado(Long chamadoId, String emailUsuarioLogado){
+    public List<AnexoResponseDTO> listarAnexosDoChamado(Long chamadoId, String emailUsuarioLogado) {
         if (!chamadoRepository.existsById(chamadoId)) {
             throw new BusinessException("Chamado não encontrado.");
         }
 
-        // TODO: Validar se o usuário logado tem permissão para visualizar este chamado na Fila de Atendimento.
+        // TODO: Validar se o usuário logado tem permissão para visualizar este chamado
+        // na Fila de Atendimento.
 
         return anexoRepository.findByChamadoId(chamadoId)
-        .stream()
-        .map(this::converterParaDTO)
-        .toList();
+                .stream()
+                .map(this::converterParaDTO)
+                .toList();
     }
 
-    public Resource carregarArquivoComoRecurso(Long anexoId, String emailUsuarioLogado){
+    public Resource carregarArquivoComoRecurso(Long anexoId, String emailUsuarioLogado) {
         Anexo anexo = anexoRepository.findById(anexoId)
-        .orElseThrow(() -> new BusinessException("Anexo não encontrado."));
+                .orElseThrow(() -> new BusinessException("Anexo não encontrado."));
 
-        // TODO: Validar permissão de download de acordo com a Fila e Escalonamento do Chamado.
+        // TODO: Validar permissão de download de acordo com a Fila e Escalonamento do
+        // Chamado.
 
         try {
             Path caminho = Paths.get(anexo.getCaminhoArquivo());
@@ -112,7 +116,7 @@ public class AnexoService {
 
             if (resource.exists() || resource.isReadable()) {
                 return resource;
-            }else{
+            } else {
                 throw new BusinessException("Não foi possível ler o arquivo solicitado.");
             }
         } catch (MalformedURLException e) {
@@ -120,20 +124,45 @@ public class AnexoService {
         }
     }
 
-    public Anexo buscarPorId(Long anexoId){
+    public Anexo buscarPorId(Long anexoId) {
         return anexoRepository.findById(anexoId)
-        .orElseThrow(() -> new BusinessException("Anexo não encontrado."));
+                .orElseThrow(() -> new BusinessException("Anexo não encontrado."));
     }
 
-    private AnexoResponseDTO converterParaDTO(Anexo anexo){
+    private AnexoResponseDTO converterParaDTO(Anexo anexo) {
         return new AnexoResponseDTO(
-            anexo.getId(),
-            anexo.getNomeArquivo(),
-            anexo.getTipoArquivo(),
-            anexo.getTamanho(),
-            anexo.getDataUpload(),
-            anexo.getEnviadoPor().getNome(),
-            anexo.getChamado().getId()
-        );
+                anexo.getId(),
+                anexo.getNomeArquivo(),
+                anexo.getTipoArquivo(),
+                anexo.getTamanho(),
+                anexo.getDataUpload(),
+                anexo.getEnviadoPor().getNome(),
+                anexo.getChamado().getId());
+    }
+
+    @Transactional
+    public void deletarAnexo(Long anexoId, String emailUsuarioLogado) {
+        Anexo anexo = buscarPorId(anexoId);
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado)
+                .orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
+
+        // Segurança: Apenas quem enviou o anexo ou um Atendente/Admin pode excluí-lo
+        boolean isDono = anexo.getEnviadoPor().getId().equals(usuarioLogado.getId());
+        boolean isAtendente = usuarioLogado.getPerfil() == com.example.helpdesk_backend.model.enums.Perfil.ATENDENTE;
+
+        if (!isDono && !isAtendente) {
+            throw new BusinessException("Você não tem permissão para excluir este anexo.");
+        }
+
+        // 1. Remove o arquivo físico da pasta uploads/
+        try {
+            Path caminhoArquivo = Paths.get(anexo.getCaminhoArquivo());
+            Files.deleteIfExists(caminhoArquivo);
+        } catch (IOException e) {
+            throw new BusinessException("Falha ao apagar o arquivo do disco: " + e.getMessage());
+        }
+
+        // 2. Remove o registro do banco de dados
+        anexoRepository.delete(anexo);
     }
 }

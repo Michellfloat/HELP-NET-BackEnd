@@ -46,15 +46,15 @@ public class Chamado {
     private Usuario responsavel; // Pode ser nulo até um atendente assumir
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private Categoria categoria;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private Urgencia urgencia;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private StatusChamado status;
 
     @Enumerated(EnumType.STRING)

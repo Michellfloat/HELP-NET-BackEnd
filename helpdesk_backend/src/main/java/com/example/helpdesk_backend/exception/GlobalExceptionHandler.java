@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -22,59 +23,68 @@ public class GlobalExceptionHandler {
      */
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<StandardError>handleBusinessException(BusinessException e, HttpServletRequest request){
-        StandardError error = new StandardError(
-            LocalDateTime.now(),
-            HttpStatus.BAD_REQUEST.value(),
-            e.getMessage(),
-            request.getRequestURI()
-        );
+    public ResponseEntity<StandardError> handleBusinessException(BusinessException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        StandardError err = new StandardError(LocalDateTime.now(), status.value(), e.getMessage(),
+                request.getRequestURI());
+
+        return ResponseEntity.status(status).body(err);
     }
 
     /**
      * Captura os erros de validação das anotações @Valid (ex: @Email, @NotBlank)
      */
 
+    // 1. Captura erros de validação dos DTOs (@Valid, @NotNull, @NotBlank)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>>handleValidationExceptions(MethodArgumentNotValidException err){
-        Map<String,String>error = new HashMap<>();
+    public ResponseEntity<StandardError> handleValidation(MethodArgumentNotValidException e,
+            HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
 
-        //Itera sobre os erros capturados pelo String Validation
-        err.getBindingResult().getAllErrors().forEach((errors) -> {
-            String fieldName = ((FieldError) errors).getField();
-            String errorMessage = errors.getDefaultMessage();
-            error.put(fieldName, errorMessage);
-        });
+        String mensagem = e.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        StandardError err = new StandardError(LocalDateTime.now(), status.value(), mensagem, request.getRequestURI());
+
+        return ResponseEntity.status(status).body(err);
+    }
+
+    // 2. Captura violações de regras do Banco de Dados (ex: campos NOT NULL
+    // ausentes)
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<StandardError> handleDataIntegrity(DataIntegrityViolationException e,
+            HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        StandardError err = new StandardError(
+                LocalDateTime.now(),
+                status.value(),
+                "Erro de integridade de dados. Verifique se todos os campos obrigatórios foram enviados.",
+                request.getRequestURI());
+        return ResponseEntity.status(status).body(err);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<StandardError>handleGenericException(Exception e, HttpServletRequest request){
+    public ResponseEntity<StandardError> handleGenericException(Exception e, HttpServletRequest request) {
         StandardError error = new StandardError(
-            LocalDateTime.now(),
+                LocalDateTime.now(),
 
-            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
 
-            "Erro interno no servidor. Contate o Administrador.",
+                "Erro interno no servidor. Contate o Administrador.",
 
-            request.getRequestURI()
-        );
+                request.getRequestURI());
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
-    @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
-public ResponseEntity<StandardError> handleAuthenticationException(Exception e, HttpServletRequest request) {
-    HttpStatus status = HttpStatus.UNAUTHORIZED; // 401
-    StandardError err = new StandardError(
-            LocalDateTime.now(),
-            status.value(),
-            "E-mail ou senha inválidos.",
-            request.getRequestURI()
-    );
-    return ResponseEntity.status(status).body(err);
+    @ExceptionHandler({ BadCredentialsException.class, UsernameNotFoundException.class })
+    public ResponseEntity<StandardError> handleAuthenticationException(Exception e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED; // 401
+        StandardError err = new StandardError(
+                LocalDateTime.now(),
+                status.value(),
+                "E-mail ou senha inválidos.",
+                request.getRequestURI());
+        return ResponseEntity.status(status).body(err);
     }
 }
