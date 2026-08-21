@@ -20,7 +20,7 @@ import io.jsonwebtoken.security.Keys;
 public class JwtService {
 
     //Chave secreta definida no application.properties ou valor default para o Desenvolvimento
-    @Value("${api.security.token.secret::helpdesk_secret_key_32_bytes_min_length_for_hmac_sha}")
+    @Value("${api.security.token.secret:helpdesk_secret_key_32_bytes_min_length_for_hmac_sha}")
     private String secretKey;
 
     @Value("${api.security.token.expiration:86400000}") //86400000 = 24 horas em milisegundos
