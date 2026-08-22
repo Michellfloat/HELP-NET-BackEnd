@@ -60,6 +60,8 @@ public class ChamadoService {
         chamado.setNivelExigido(NivelAntendente.NIVEL_I);
         chamado.setDataAbertura(LocalDateTime.now());
         chamado.setProtocolo(gerarProtocolo());
+        chamado.setDescricao(dto.descricao());
+        chamado.setEquipamento(dto.equipamento());
 
         Chamado chamadoSalvo = chamadoRepository.save(chamado);
         return converterParaResponseDTO(chamadoSalvo);
@@ -125,13 +127,17 @@ public class ChamadoService {
                 chamado.getId(), // <-- CORRIGIDO AQUI!
                 chamado.getProtocolo(),
                 chamado.getSolicitante().getEmail(),
-                chamado.getSolicitante().getNome(),
+
+                chamado.getResponsavel() != null ? chamado.getResponsavel().getNome() :
+
                 nomeResponsavel,
                 chamado.getCategoria(),
                 chamado.getUrgencia(),
                 chamado.getStatus(),
                 chamado.getNivelExigido(),
-                chamado.getDataAbertura()
+                chamado.getDataAbertura(),
+                chamado.getDescricao(),
+                chamado.getEquipamento()
         );
     }
 }
