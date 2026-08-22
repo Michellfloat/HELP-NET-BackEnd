@@ -72,7 +72,7 @@ public class AuthService {
 //---------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------
-
+        //TODO:Criar uma exceção de usuário(Admin total do sistema) e dividir os níveis de acesso e privilégios do sistema(Nível I não pode ter as mesmas capacidades do Nível III)
         //4°:Retorna a resposta completa
         return new LoginResponseDTO(token, usuario.getEmail(), usuario.getPerfil().name());
     }

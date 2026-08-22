@@ -39,7 +39,7 @@ public class UsuarioService {
         // RN03: Remove a trava de 1º acesso, permitindo que o usuário acesse o sistema
         // normalmente.
         usuario.setCadastroCompleto(true);
-
+        //TODO: Implementar a opção de complementar o perfil via ID, caso seja necessário para administradores ou outros usuários.
         Usuario usuarioAtualizado = usuarioRepository.save(usuario);
         return converterParaResponseDTO(usuarioAtualizado);
     }

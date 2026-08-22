@@ -33,7 +33,7 @@ public class UsuarioController {
 
     private final AuthService authService;
 
-    @PatchMapping("/complementar-perfil")
+    @PatchMapping("/complementar-perfil") //TODO: Inserir no controller a opção de complementar o perfil via ID
     public ResponseEntity<UsuarioResponseDTO> completarPerfil(@RequestBody @Valid ComplementarPerfilDTO dto,
             Authentication authentication) {
         // Extrair o email do usuário autenticado

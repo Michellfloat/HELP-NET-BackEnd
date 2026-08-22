@@ -60,6 +60,8 @@ public class AnexoService {
         // TODO: Validar visibilidade/permissão de Fila e Escalonamento (Garantir que
         // atendentes sem acesso à fila não alterem o chamado).
 
+        //TODO:Averiguar se está salvando em disco e, caso não inserir esta opção.
+
         try {
             if (!Files.exists(diretorioUploads)) {
                 Files.createDirectories(diretorioUploads);

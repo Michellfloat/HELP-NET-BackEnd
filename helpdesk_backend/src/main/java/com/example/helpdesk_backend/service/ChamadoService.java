@@ -120,12 +120,12 @@ public class ChamadoService {
         String nomeResponsavel = (chamado.getResponsavel() != null && chamado.getResponsavel().getEmail() != null)
                 ? chamado.getResponsavel().getEmail()
                 : "Não atribuído";
-
+        //TODO: Corrigir a ordem dos parâmetros para que o nome do solicitante seja exibido corretamente no DTO
         return new ChamadoResponseDTO(
                 chamado.getId(), // <-- CORRIGIDO AQUI!
                 chamado.getProtocolo(),
                 chamado.getSolicitante().getEmail(),
-                chamado.getSolicitante().getEmail(),
+                chamado.getSolicitante().getNome(),
                 nomeResponsavel,
                 chamado.getCategoria(),
                 chamado.getUrgencia(),
