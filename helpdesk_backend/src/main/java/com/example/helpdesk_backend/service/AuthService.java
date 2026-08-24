@@ -10,6 +10,8 @@ import com.example.helpdesk_backend.dtos.request.UserCreateDTO;
 import com.example.helpdesk_backend.dtos.response.LoginResponseDTO;
 import com.example.helpdesk_backend.exception.BusinessException;
 import com.example.helpdesk_backend.model.Usuario;
+import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
 import com.example.helpdesk_backend.security.JwtService;
 
@@ -72,8 +74,21 @@ public class AuthService {
 //---------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------
-        //TODO:Criar uma exceção de usuário(Admin total do sistema) e dividir os níveis de acesso e privilégios do sistema(Nível I não pode ter as mesmas capacidades do Nível III)
         //4°:Retorna a resposta completa
         return new LoginResponseDTO(token, usuario.getEmail(), usuario.getPerfil().name());
+    }
+
+    public void validarPrivilegioAtendente(Usuario usuario, NivelAntendente nivelMinimoRequerido){
+        if (usuario.getPerfil() == Perfil.ADMIN) {
+            return;
+        }
+
+        if (usuario.getPerfil() != Perfil.ATENDENTE) {
+            throw new BusinessException("Acesso negado: privilégio de atendente necessário.");
+        }
+
+        if (usuario.getNivelAntendente() == null || usuario.getNivelAntendente().ordinal() < nivelMinimoRequerido.ordinal()) {
+            throw new BusinessException("Nível de acesso insuficiente. Necessário nível: " + nivelMinimoRequerido);
+        }
     }
 }

@@ -42,6 +42,14 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.completarPerfil(email, dto));
     }
 
+    @PatchMapping("/{id}/complementar-perfil")
+    public ResponseEntity<UsuarioResponseDTO>complementarPerfilPorId(
+        @PathVariable Long id,
+        @RequestBody @Valid ComplementarPerfilDTO dto
+    ){
+        return ResponseEntity.ok(usuarioService.complementarPerfilPorId(id, dto));
+    }
+
     @GetMapping
     public ResponseEntity<Page<UsuarioResponseDTO>> listarUsuarios(Pageable pageable) {
         return ResponseEntity.ok(usuarioService.listarUsuarios(pageable));

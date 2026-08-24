@@ -103,8 +103,8 @@ public class ChamadoService {
 
     private Usuario determinarSolicitante(ChamadoCreateDTO dto, Usuario usuarioLogado) {
         if (dto.solicitanteId() != null) {
-            if (usuarioLogado.getPerfil() != Perfil.ATENDENTE) {
-                throw new BusinessException("Apenas atendentes podem abrir chamados em nome de terceiros.");
+            if (usuarioLogado.getPerfil() != Perfil.ATENDENTE && usuarioLogado.getPerfil() != Perfil.ADMIN) {
+                throw new BusinessException("Apenas atendentes e administradores podem abrir chamados em nome de terceiros.");
             }
             return usuarioRepository.findById(dto.solicitanteId())
                     .orElseThrow(() -> new BusinessException("Solicitante informado (Proxy) não encontrado."));
@@ -119,17 +119,14 @@ public class ChamadoService {
     }
 
     private ChamadoResponseDTO converterParaResponseDTO(Chamado chamado) {
-        String nomeResponsavel = (chamado.getResponsavel() != null && chamado.getResponsavel().getEmail() != null)
-                ? chamado.getResponsavel().getEmail()
+        String nomeResponsavel = (chamado.getResponsavel() != null)
+                ? chamado.getResponsavel().getNome()
                 : "Não atribuído";
-        //TODO: Corrigir a ordem dos parâmetros para que o nome do solicitante seja exibido corretamente no DTO
+        
         return new ChamadoResponseDTO(
                 chamado.getId(), // <-- CORRIGIDO AQUI!
                 chamado.getProtocolo(),
                 chamado.getSolicitante().getEmail(),
-
-                chamado.getResponsavel() != null ? chamado.getResponsavel().getNome() :
-
                 nomeResponsavel,
                 chamado.getCategoria(),
                 chamado.getUrgencia(),

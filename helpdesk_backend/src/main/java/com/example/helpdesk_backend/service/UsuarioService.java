@@ -35,11 +35,24 @@ public class UsuarioService {
         // Atualizadando os campos de cargo e setor
         usuario.setCargo(dto.cargo());
         usuario.setSetor(dto.setor());
+        
 
         // RN03: Remove a trava de 1º acesso, permitindo que o usuário acesse o sistema
         // normalmente.
         usuario.setCadastroCompleto(true);
-        //TODO: Implementar a opção de complementar o perfil via ID, caso seja necessário para administradores ou outros usuários.
+        
+        Usuario usuarioAtualizado = usuarioRepository.save(usuario);
+        return converterParaResponseDTO(usuarioAtualizado);
+    }
+
+    @Transactional
+    public UsuarioResponseDTO complementarPerfilPorId(Long id, ComplementarPerfilDTO dto){
+        Usuario usuario = buscarPorId(id);
+
+        usuario.setCargo(dto.cargo());
+        usuario.setSetor(dto.setor());
+        usuario.setCadastroCompleto(true);
+
         Usuario usuarioAtualizado = usuarioRepository.save(usuario);
         return converterParaResponseDTO(usuarioAtualizado);
     }
@@ -73,6 +86,19 @@ public class UsuarioService {
         return converterParaResponseDTO(usuarioAtualizado);
     }
 
+    @Transactional
+    public void deletarUsuario(Long id) {
+        Usuario usuario = buscarPorId(id);
+
+        // RN de Integridade: Impede deleção direta se o usuário possui histórico de
+        // chamados no banco
+        if (chamadoRepository.existsBySolicitanteIdOrResponsavelId(id, id)) {
+            throw new BusinessException("Não é possível excluir um usuário que possui chamados vinculados.");
+        }
+
+        usuarioRepository.delete(usuario);
+    }
+    
     /**
      * Método utilitário privado para conversão de Entidade para DTO.
      */
@@ -88,16 +114,4 @@ public class UsuarioService {
                 usuario.getCadastroCompleto());
     }
 
-    @Transactional
-    public void deletarUsuario(Long id) {
-        Usuario usuario = buscarPorId(id);
-
-        // RN de Integridade: Impede deleção direta se o usuário possui histórico de
-        // chamados no banco
-        if (chamadoRepository.existsBySolicitanteIdOrResponsavelId(id, id)) {
-            throw new BusinessException("Não é possível excluir um usuário que possui chamados vinculados.");
-        }
-
-        usuarioRepository.delete(usuario);
-    }
 }
