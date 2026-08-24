@@ -60,6 +60,8 @@ public class ChamadoService {
         chamado.setNivelExigido(NivelAntendente.NIVEL_I);
         chamado.setDataAbertura(LocalDateTime.now());
         chamado.setProtocolo(gerarProtocolo());
+        chamado.setDescricao(dto.descricao());
+        chamado.setEquipamento(dto.equipamento());
 
         Chamado chamadoSalvo = chamadoRepository.save(chamado);
         return converterParaResponseDTO(chamadoSalvo);
@@ -101,8 +103,8 @@ public class ChamadoService {
 
     private Usuario determinarSolicitante(ChamadoCreateDTO dto, Usuario usuarioLogado) {
         if (dto.solicitanteId() != null) {
-            if (usuarioLogado.getPerfil() != Perfil.ATENDENTE) {
-                throw new BusinessException("Apenas atendentes podem abrir chamados em nome de terceiros.");
+            if (usuarioLogado.getPerfil() != Perfil.ATENDENTE && usuarioLogado.getPerfil() != Perfil.ADMIN) {
+                throw new BusinessException("Apenas atendentes e administradores podem abrir chamados em nome de terceiros.");
             }
             return usuarioRepository.findById(dto.solicitanteId())
                     .orElseThrow(() -> new BusinessException("Solicitante informado (Proxy) não encontrado."));
@@ -117,21 +119,22 @@ public class ChamadoService {
     }
 
     private ChamadoResponseDTO converterParaResponseDTO(Chamado chamado) {
-        String nomeResponsavel = (chamado.getResponsavel() != null && chamado.getResponsavel().getEmail() != null)
-                ? chamado.getResponsavel().getEmail()
+        String nomeResponsavel = (chamado.getResponsavel() != null)
+                ? chamado.getResponsavel().getNome()
                 : "Não atribuído";
-
+        
         return new ChamadoResponseDTO(
                 chamado.getId(), // <-- CORRIGIDO AQUI!
                 chamado.getProtocolo(),
-                chamado.getSolicitante().getEmail(),
                 chamado.getSolicitante().getEmail(),
                 nomeResponsavel,
                 chamado.getCategoria(),
                 chamado.getUrgencia(),
                 chamado.getStatus(),
                 chamado.getNivelExigido(),
-                chamado.getDataAbertura()
+                chamado.getDataAbertura(),
+                chamado.getDescricao(),
+                chamado.getEquipamento()
         );
     }
 }

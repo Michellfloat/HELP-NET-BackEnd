@@ -20,6 +20,8 @@ import com.example.helpdesk_backend.exception.BusinessException;
 import com.example.helpdesk_backend.model.Anexo;
 import com.example.helpdesk_backend.model.Chamado;
 import com.example.helpdesk_backend.model.Usuario;
+import com.example.helpdesk_backend.model.enums.Perfil;
+import com.example.helpdesk_backend.model.enums.StatusChamado;
 import com.example.helpdesk_backend.repository.AnexoRepository;
 import com.example.helpdesk_backend.repository.ChamadoRepository;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
@@ -43,7 +45,7 @@ public class AnexoService {
         }
 
         // RNF04: Limite de tamanho (Exemplo: máximo 10MB)
-        long limiteMaximo = 10 * 1024 * 1024; // ->10 MB
+        long limiteMaximo = 10 * 1024 * 1024; // 10 MB
 
         if (file.getSize() > limiteMaximo) {
             throw new BusinessException("O tamanho do arquivo excede o limite máximo permitido de 10MB.");
@@ -55,12 +57,12 @@ public class AnexoService {
         Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado)
                 .orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
 
-        // TODO: Validar se o chamado está fechado/finalizado. Não permitir anexos em
-        // chamados encerrados.
-        // TODO: Validar visibilidade/permissão de Fila e Escalonamento (Garantir que
-        // atendentes sem acesso à fila não alterem o chamado).
+        //Validar status e permissão de acesso ao chamado
+        validarStatusChamadoAberto(chamado);
+        validarPermissaoFilaEEscalonamento(chamado, usuarioLogado);
 
         try {
+            // Confirmação de escrita/salvamento em disco
             if (!Files.exists(diretorioUploads)) {
                 Files.createDirectories(diretorioUploads);
             }
@@ -94,8 +96,13 @@ public class AnexoService {
             throw new BusinessException("Chamado não encontrado.");
         }
 
-        // TODO: Validar se o usuário logado tem permissão para visualizar este chamado
+        // Validar se o usuário logado tem permissão para visualizar este chamado
         // na Fila de Atendimento.
+        Chamado chamado = chamadoRepository.findById(chamadoId).orElseThrow(() -> new BusinessException("Chamado não encontrado."));
+        
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado).orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
+
+        validarPermissaoFilaEEscalonamento(chamado, usuarioLogado);
 
         return anexoRepository.findByChamadoId(chamadoId)
                 .stream()
@@ -107,8 +114,9 @@ public class AnexoService {
         Anexo anexo = anexoRepository.findById(anexoId)
                 .orElseThrow(() -> new BusinessException("Anexo não encontrado."));
 
-        // TODO: Validar permissão de download de acordo com a Fila e Escalonamento do
-        // Chamado.
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado).orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
+
+        validarPermissaoFilaEEscalonamento(anexo.getChamado(), usuarioLogado);
 
         try {
             Path caminho = Paths.get(anexo.getCaminhoArquivo());
@@ -129,17 +137,6 @@ public class AnexoService {
                 .orElseThrow(() -> new BusinessException("Anexo não encontrado."));
     }
 
-    private AnexoResponseDTO converterParaDTO(Anexo anexo) {
-        return new AnexoResponseDTO(
-                anexo.getId(),
-                anexo.getNomeArquivo(),
-                anexo.getTipoArquivo(),
-                anexo.getTamanho(),
-                anexo.getDataUpload(),
-                anexo.getEnviadoPor().getNome(),
-                anexo.getChamado().getId());
-    }
-
     @Transactional
     public void deletarAnexo(Long anexoId, String emailUsuarioLogado) {
         Anexo anexo = buscarPorId(anexoId);
@@ -148,9 +145,9 @@ public class AnexoService {
 
         // Segurança: Apenas quem enviou o anexo ou um Atendente/Admin pode excluí-lo
         boolean isDono = anexo.getEnviadoPor().getId().equals(usuarioLogado.getId());
-        boolean isAtendente = usuarioLogado.getPerfil() == com.example.helpdesk_backend.model.enums.Perfil.ATENDENTE;
+        boolean isAtendenteOrAdmin = usuarioLogado.getPerfil() == Perfil.ATENDENTE || usuarioLogado.getPerfil() == Perfil.ADMIN;
 
-        if (!isDono && !isAtendente) {
+        if (!isDono && !isAtendenteOrAdmin) {
             throw new BusinessException("Você não tem permissão para excluir este anexo.");
         }
 
@@ -165,4 +162,41 @@ public class AnexoService {
         // 2. Remove o registro do banco de dados
         anexoRepository.delete(anexo);
     }
+
+    private void validarStatusChamadoAberto(Chamado chamado){
+        if (chamado.getStatus() == StatusChamado.FECHADO || chamado.getStatus() == StatusChamado.RESOLVIDO) {
+            throw new BusinessException("Não é permitido adicionar ou alterar anexos em chamados encerrados ou resolvidos.");
+        }
+    }
+
+    private void validarPermissaoFilaEEscalonamento(Chamado chamado, Usuario usuario){
+        if (usuario.getPerfil() == Perfil.ADMIN) {
+            return;
+        }
+
+        if (usuario.getPerfil() == Perfil.USUARIO) {
+            if (!chamado.getSolicitante().getId().equals(usuario.getId())) {
+                throw new BusinessException("Acesso negado: Você só pode acessar anexos dos seus próprios chamados");
+            }
+            return;
+        }
+        if (usuario.getPerfil() == Perfil.ATENDENTE) {
+            if (usuario.getNivelAntendente() == null ||
+                usuario.getNivelAntendente().ordinal() < chamado.getNivelExigido().ordinal()) {
+                throw new BusinessException("Acesso negado: Seu nível de atendente (" + usuario.getNivelAntendente() + ") é inferior ao nível exigido pelo chamado (" + chamado.getNivelExigido() + ").");
+            }
+        }
+    }
+
+    private AnexoResponseDTO converterParaDTO(Anexo anexo) {
+        return new AnexoResponseDTO(
+                anexo.getId(),
+                anexo.getNomeArquivo(),
+                anexo.getTipoArquivo(),
+                anexo.getTamanho(),
+                anexo.getDataUpload(),
+                anexo.getEnviadoPor().getNome(),
+                anexo.getChamado().getId());
+    }
+
 }

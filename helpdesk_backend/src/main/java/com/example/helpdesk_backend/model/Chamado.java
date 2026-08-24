@@ -66,4 +66,10 @@ public class Chamado {
 
     @Column(nullable = true)
     private LocalDateTime dataFechamento;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String descricao;
+
+    @Column(length = 100)
+    private String equipamento; 
 }

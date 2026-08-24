@@ -14,21 +14,22 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner{
     private final UsuarioRepository usuarioRepository;
-
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public void run(String... args){
+    public void run(String... args) {
         if (usuarioRepository.findByEmail("admin@helpdesk.com").isEmpty()) {
-          Usuario admin = new Usuario();
-          admin.setNome("Administrador");
-          admin.setEmail("admin@helpdesk.com");
-          admin.setSenha(passwordEncoder.encode("123"));
-          admin.setPerfil(Perfil.ATENDENTE);
-          admin.setCadastroCompleto(true);
-          
-          usuarioRepository.save(admin);
-          System.out.println(">>> USUÁRIO ADMIN CRIADO COM SUCESSO: admin@helpdesk.com / 123 <<<");
+            Usuario admin = new Usuario();
+            admin.setNome("Administrador do Sistema");
+            admin.setEmail("admin@helpdesk.com");
+            admin.setSenha(passwordEncoder.encode("123"));
+            admin.setPerfil(Perfil.ADMIN);
+            admin.setCargo("Administrador Geral");
+            admin.setSetor("Tecnologia da Informação");
+            admin.setCadastroCompleto(true);
+
+            usuarioRepository.save(admin);
+            System.out.println(">>> USUÁRIO ADMIN CRIADO COM SUCESSO: admin@helpdesk.com / 123 (Perfil: ADMIN) <<<");
         }
     }
 }

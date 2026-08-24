@@ -33,13 +33,21 @@ public class UsuarioController {
 
     private final AuthService authService;
 
-    @PatchMapping("/complementar-perfil")
+    @PatchMapping("/complementar-perfil") //TODO: Inserir no controller a opção de complementar o perfil via ID
     public ResponseEntity<UsuarioResponseDTO> completarPerfil(@RequestBody @Valid ComplementarPerfilDTO dto,
             Authentication authentication) {
         // Extrair o email do usuário autenticado
         String email = authentication.getName();
 
         return ResponseEntity.ok(usuarioService.completarPerfil(email, dto));
+    }
+
+    @PatchMapping("/{id}/complementar-perfil")
+    public ResponseEntity<UsuarioResponseDTO>complementarPerfilPorId(
+        @PathVariable Long id,
+        @RequestBody @Valid ComplementarPerfilDTO dto
+    ){
+        return ResponseEntity.ok(usuarioService.complementarPerfilPorId(id, dto));
     }
 
     @GetMapping
