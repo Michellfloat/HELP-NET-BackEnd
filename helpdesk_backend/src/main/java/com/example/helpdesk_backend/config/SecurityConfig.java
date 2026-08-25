@@ -39,19 +39,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
 
                         // 2. Gestão de Usuários: Restrita a ADMIN e ATENDENTE
-                        .requestMatchers(HttpMethod.POST, "/usuarios").hasAnyRole("ADMIN", "ATENDENTE", "ROLE_ADMIN", "ROLE_ATENDENTE")
-                        .requestMatchers(HttpMethod.GET, "/usuarios").hasAnyRole("ADMIN", "ATENDENTE", "ROLE_ADMIN", "ROLE_ATENDENTE")
-                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE","ROLE_ADMIN","ROLE_ATENDENTE")
-                        .requestMatchers(HttpMethod.DELETE, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE","ROLE_ADMIN","ROLE_ATENDENTE") // ADICIONADO: Exclusão de Usuários
+                        .requestMatchers(HttpMethod.POST, "/usuarios").hasAnyRole("ADMIN", "ATENDENTE")
+                        .requestMatchers(HttpMethod.GET, "/usuarios").hasAnyRole("ADMIN", "ATENDENTE")
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE")
+                        .requestMatchers(HttpMethod.DELETE, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE") // ADICIONADO: Exclusão de Usuários
 
                         // 3. Trava de Primeiro Acesso e Complemento de Perfil
                         .requestMatchers(HttpMethod.PATCH, "/usuarios/complementar-perfil").authenticated() // Próprio Usuário Logado
-                        .requestMatchers(HttpMethod.PATCH, "/usuarios/*/complementar-perfil").hasAnyRole("ADMIN", "ATENDENTE","ROLE_ADMIN","ROLE_ATENDENTE") // ADICIONADO: Complemento por ID
+                        .requestMatchers(HttpMethod.PATCH, "/usuarios/*/complementar-perfil").hasAnyRole("ADMIN", "ATENDENTE") // ADICIONADO: Complemento por ID
 
                         // 4. Gestão de Chamados
                         .requestMatchers(HttpMethod.POST, "/chamados").authenticated() // Abertura Própria ou Proxy
                         .requestMatchers(HttpMethod.GET, "/chamados").authenticated() // Listagem de Fila/Chamados
-                        .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAnyRole("ADMIN", "ATENDENTE","ROLE_ADMIN","ROLE_ATENDENTE") // Escalonamento Restrito
+                        .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAnyRole("ADMIN", "ATENDENTE") // Escalonamento Restrito
 
                         // 5. Gestão de Anexos
                         .requestMatchers(HttpMethod.POST, "/chamados/*/anexos").authenticated()
