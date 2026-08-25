@@ -35,25 +35,30 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         // Libera apenas o endpoint de login
-                        //1-Rota pública de autenticação (login) que não requer autenticação
+                        // 1. Rota pública de Autenticação
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
 
-                        // 2. Criação de Usuários: Apenas Atendentes (RF04)
-                        .requestMatchers(HttpMethod.POST, "/usuarios").hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
-                        .requestMatchers(HttpMethod.GET, "/usuarios").hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
-                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
+                        // 2. Gestão de Usuários: Restrita a ADMIN e ATENDENTE
+                        .requestMatchers(HttpMethod.POST, "/usuarios").hasAnyRole("ADMIN", "ATENDENTE")
+                        .requestMatchers(HttpMethod.GET, "/usuarios").hasAnyRole("ADMIN", "ATENDENTE")
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE")
+                        .requestMatchers(HttpMethod.DELETE, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE") // ADICIONADO: Exclusão de Usuários
 
-                        // 3. Edição/Listagem de Usuários
-                        .requestMatchers(HttpMethod.PATCH, "/usuarios/complementar-perfil").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
-                        // 4. Complemento de Perfil (Primeiro Acesso) - Aberto para qualquer usuário autenticado
-                        .requestMatchers(HttpMethod.GET, "/chamados")
-                        .hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
-                        .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAnyAuthority("ATENDENTE", "ROLE_ATENDENTE")
+                        // 3. Trava de Primeiro Acesso e Complemento de Perfil
+                        .requestMatchers(HttpMethod.PATCH, "/usuarios/complementar-perfil").authenticated() // Próprio Usuário Logado
+                        .requestMatchers(HttpMethod.PATCH, "/usuarios/*/complementar-perfil").hasAnyRole("ADMIN", "ATENDENTE") // ADICIONADO: Complemento por ID
 
-                        // 5. Chamados e Anexos - Qualquer usuário autenticado
-                        .requestMatchers("/chamados/*/anexos").authenticated()
-                        .requestMatchers("/anexos/*/download").authenticated()
+                        // 4. Gestão de Chamados
+                        .requestMatchers(HttpMethod.POST, "/chamados").authenticated() // Abertura Própria ou Proxy
+                        .requestMatchers(HttpMethod.GET, "/chamados").authenticated() // Listagem de Fila/Chamados
+                        .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAnyRole("ADMIN", "ATENDENTE") // Escalonamento Restrito
+
+                        // 5. Gestão de Anexos
+                        .requestMatchers(HttpMethod.POST, "/chamados/*/anexos").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/chamados/*/anexos").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/anexos/*/download").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/anexos/*").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/chamados/*/anexos/*").authenticated()
 
                         // Restringe qualquer outra requisição para usuários autenticados
                         .anyRequest().authenticated()

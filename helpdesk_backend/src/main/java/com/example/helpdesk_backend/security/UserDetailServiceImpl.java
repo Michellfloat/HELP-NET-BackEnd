@@ -34,7 +34,7 @@ public class UserDetailServiceImpl implements UserDetailsService{
                 usuario.getSenha(),
                 List.of(
                         new SimpleGrantedAuthority(perfilNome),
-                        new SimpleGrantedAuthority("ROLE_" + perfilNome)
+                        new SimpleGrantedAuthority("ROLE_" + perfilNome) // Suporte estendido a roles do Spring Security
                 )
         );
     }
