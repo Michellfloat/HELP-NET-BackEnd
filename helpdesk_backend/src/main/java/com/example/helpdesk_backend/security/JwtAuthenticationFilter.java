@@ -39,7 +39,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                 if (usuario != null) {
                     String perfilNome = usuario.getPerfil().name();
                     
-                    // Registra agora tanto 'ATENDENTE' quanto 'ROLE_ATENDENTE' para garantir compatibilidade total
+                    // ATUALIZADO: Registra o perfil mapeando a autoridade bruta e com o prefixo 'ROLE_'
+                    // Permite o funcionamento de .hasRole("ADMIN") e .hasAuthority("ADMIN") no SecurityConfig
                     var authorities = List.of(
                         new SimpleGrantedAuthority(perfilNome),
                         new SimpleGrantedAuthority("ROLE_" + perfilNome)
