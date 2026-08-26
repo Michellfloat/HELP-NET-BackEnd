@@ -2,10 +2,7 @@ package com.example.helpdesk_backend.dtos.response;
 
 import java.time.LocalDateTime;
 
-import com.example.helpdesk_backend.model.enums.Categoria;
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
-import com.example.helpdesk_backend.model.enums.StatusChamado;
-import com.example.helpdesk_backend.model.enums.Urgencia;
+import com.example.helpdesk_backend.model.enums.*;
 
 public record ChamadoResponseDTO(
         Long id,
@@ -18,6 +15,7 @@ public record ChamadoResponseDTO(
         NivelAntendente nivelExigido,
         LocalDateTime dataAbertura,
         String descricao, 
-        String equipamento 
+        String equipamento,
+        Setor setor
 ) {
 }
