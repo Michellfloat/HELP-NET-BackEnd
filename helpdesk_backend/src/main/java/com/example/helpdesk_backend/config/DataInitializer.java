@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.example.helpdesk_backend.model.Usuario;
 import com.example.helpdesk_backend.model.enums.Perfil;
+import com.example.helpdesk_backend.model.enums.Setor;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class DataInitializer implements CommandLineRunner{
             admin.setSenha(passwordEncoder.encode("123"));
             admin.setPerfil(Perfil.ADMIN);
             admin.setCargo("Administrador Geral");
-            admin.setSetor("Tecnologia da Informação");
+            admin.setSetor(Setor.DESENVOLVIMENTO);
             admin.setCadastroCompleto(true);
 
             usuarioRepository.save(admin);
