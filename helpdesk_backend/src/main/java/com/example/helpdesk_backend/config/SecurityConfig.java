@@ -42,6 +42,9 @@ public class SecurityConfig {
             
             // 4. Mapeamento de Rotas e Permissões
             .authorizeHttpRequests(authorize -> authorize
+
+                    //Acesso público ap Swagger UI e à documentação OpenAPI
+                    .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                     // Rota pública de Autenticação
                     .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
 
