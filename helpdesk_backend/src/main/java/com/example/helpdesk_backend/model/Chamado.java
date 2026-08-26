@@ -2,10 +2,7 @@ package com.example.helpdesk_backend.model;
 
 import java.time.LocalDateTime;
 
-import com.example.helpdesk_backend.model.enums.Categoria;
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
-import com.example.helpdesk_backend.model.enums.StatusChamado;
-import com.example.helpdesk_backend.model.enums.Urgencia;
+import com.example.helpdesk_backend.model.enums.*;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -71,5 +68,9 @@ public class Chamado {
     private String descricao;
 
     @Column(length = 100)
-    private String equipamento; 
+    private String equipamento;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "setor_responsavel", length = 30)
+    private Setor setor;
 }

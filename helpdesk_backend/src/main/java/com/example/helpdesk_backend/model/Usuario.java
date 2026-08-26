@@ -3,6 +3,7 @@ package com.example.helpdesk_backend.model;
 import com.example.helpdesk_backend.model.enums.NivelAntendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 
+import com.example.helpdesk_backend.model.enums.Setor;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -39,9 +40,6 @@ public class Usuario {
     @Column(nullable = true)
     private String cargo; //Segundo a RN 03, pode ser nulo no 1° acesso do usuário, mas depois deve ser preenchido.
 
-    @Column(nullable = true)
-    private String setor;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Perfil perfil;
@@ -52,6 +50,10 @@ public class Usuario {
 
     @Column(nullable = false)
     private Boolean cadastroCompleto; // Flag para o RF02/RN03
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "setor", length = 30)
+    private Setor setor;
 
     @Column(nullable = false)
     private String senha;

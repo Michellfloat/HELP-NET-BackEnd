@@ -2,6 +2,7 @@ package com.example.helpdesk_backend.dtos.request;
 
 import com.example.helpdesk_backend.model.enums.NivelAntendente;
 
+import com.example.helpdesk_backend.model.enums.Setor;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -15,7 +16,7 @@ public record UsuarioUpdateDTO(
 
     String cargo,
     
-    String setor,
+    Setor setor,
     NivelAntendente nivelAntendente
 ) {
 

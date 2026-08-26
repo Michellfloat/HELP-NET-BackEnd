@@ -17,6 +17,7 @@ import com.example.helpdesk_backend.exception.BusinessException;
 import com.example.helpdesk_backend.model.Chamado;
 import com.example.helpdesk_backend.model.EscalonamentoLog;
 import com.example.helpdesk_backend.model.Usuario;
+import com.example.helpdesk_backend.model.enums.Categoria;
 import com.example.helpdesk_backend.model.enums.NivelAntendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.model.enums.StatusChamado;
@@ -55,7 +56,16 @@ public class ChamadoService {
         Chamado chamado = new Chamado();
         chamado.setSolicitante(solicitante);
         chamado.setCategoria(dto.categoria());
-        chamado.setUrgencia(dto.urgencia());
+
+        // --- REGRA DE NEGÓCIO: Roteamento e Urgência Automática ---
+        if (dto.categoria() == Categoria.OUTROS) {
+            chamado.setUrgencia(dto.urgencia());
+            chamado.setSetor(null);
+        } else {
+            chamado.setUrgencia(dto.categoria().getUrgenciaPadrao());
+            chamado.setSetor(dto.categoria().getSetorResponsavel());
+        }
+
         chamado.setStatus(StatusChamado.ABERTO);
         chamado.setNivelExigido(NivelAntendente.NIVEL_I);
         chamado.setDataAbertura(LocalDateTime.now());
@@ -122,9 +132,9 @@ public class ChamadoService {
         String nomeResponsavel = (chamado.getResponsavel() != null)
                 ? chamado.getResponsavel().getNome()
                 : "Não atribuído";
-        
+
         return new ChamadoResponseDTO(
-                chamado.getId(), // <-- CORRIGIDO AQUI!
+                chamado.getId(),
                 chamado.getProtocolo(),
                 chamado.getSolicitante().getEmail(),
                 nomeResponsavel,
@@ -134,7 +144,8 @@ public class ChamadoService {
                 chamado.getNivelExigido(),
                 chamado.getDataAbertura(),
                 chamado.getDescricao(),
-                chamado.getEquipamento()
+                chamado.getEquipamento(),
+                chamado.getSetor() // <-- Mapeado para o DTO de resposta
         );
     }
 }
