@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.example.helpdesk_backend.security.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -24,47 +25,55 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final CorsConfigurationSource corsConfigurationSource;
     private final JwtAuthenticationFilter jwtAuthenticationFilter; //Adicionado Recentemente
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // Desabilita CSRF pois usaremos tokens JWT (stateless)
-                .csrf(csrf -> csrf.disable()) 
-                // Define o gerenciamento de sessão como Stateless
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> authorize
-                        // Libera apenas o endpoint de login
-                        // 1. Rota pública de Autenticação
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+            // 1. Ativa a configuração do CORS injetada no parâmetro
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+            
+            // 2. Desabilita CSRF pois a API é Stateless e usa JWT
+            .csrf(csrf -> csrf.disable()) 
+            
+            // 3. Define o gerenciamento de sessão como Stateless
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            
+            // 4. Mapeamento de Rotas e Permissões
+            .authorizeHttpRequests(authorize -> authorize
+                    // Rota pública de Autenticação
+                    .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
 
-                        // 2. Gestão de Usuários: Restrita a ADMIN e ATENDENTE
-                        .requestMatchers(HttpMethod.POST, "/usuarios").hasAnyRole("ADMIN", "ATENDENTE")
-                        .requestMatchers(HttpMethod.GET, "/usuarios").hasAnyRole("ADMIN", "ATENDENTE")
-                        .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE")
-                        .requestMatchers(HttpMethod.DELETE, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE") // ADICIONADO: Exclusão de Usuários
+                    // Gestão de Usuários: Restrita a ADMIN e ATENDENTE
+                    .requestMatchers(HttpMethod.POST, "/usuarios").hasAnyRole("ADMIN", "ATENDENTE")
+                    .requestMatchers(HttpMethod.GET, "/usuarios").hasAnyRole("ADMIN", "ATENDENTE")
+                    .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE")
+                    .requestMatchers(HttpMethod.DELETE, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE")
 
-                        // 3. Trava de Primeiro Acesso e Complemento de Perfil
-                        .requestMatchers(HttpMethod.PATCH, "/usuarios/complementar-perfil").authenticated() // Próprio Usuário Logado
-                        .requestMatchers(HttpMethod.PATCH, "/usuarios/*/complementar-perfil").hasAnyRole("ADMIN", "ATENDENTE") // ADICIONADO: Complemento por ID
+                    // Trava de Primeiro Acesso e Complemento de Perfil
+                    .requestMatchers(HttpMethod.PATCH, "/usuarios/complementar-perfil").authenticated()
+                    .requestMatchers(HttpMethod.PATCH, "/usuarios/*/complementar-perfil").hasAnyRole("ADMIN", "ATENDENTE")
 
-                        // 4. Gestão de Chamados
-                        .requestMatchers(HttpMethod.POST, "/chamados").authenticated() // Abertura Própria ou Proxy
-                        .requestMatchers(HttpMethod.GET, "/chamados").authenticated() // Listagem de Fila/Chamados
-                        .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAnyRole("ADMIN", "ATENDENTE") // Escalonamento Restrito
+                    // Gestão de Chamados
+                    .requestMatchers(HttpMethod.POST, "/chamados").authenticated()
+                    .requestMatchers(HttpMethod.GET, "/chamados").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAnyRole("ADMIN", "ATENDENTE")
 
-                        // 5. Gestão de Anexos
-                        .requestMatchers(HttpMethod.POST, "/chamados/*/anexos").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/chamados/*/anexos").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/anexos/*/download").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/anexos/*").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/chamados/*/anexos/*").authenticated()
+                    // Gestão de Anexos
+                    .requestMatchers(HttpMethod.POST, "/chamados/*/anexos").authenticated()
+                    .requestMatchers(HttpMethod.GET, "/chamados/*/anexos").authenticated()
+                    .requestMatchers(HttpMethod.GET, "/anexos/*/download").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/anexos/*").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/chamados/*/anexos/*").authenticated()
 
-                        // Restringe qualquer outra requisição para usuários autenticados
-                        .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
+                    // Restringe qualquer outra requisição para usuários autenticados
+                    .anyRequest().authenticated()
+            )
+            
+            // 5. Adiciona o filtro JWT antes do filtro padrão do Spring
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
     }
 
     // Configura o encriptador de senhas para o padrão BCrypt
