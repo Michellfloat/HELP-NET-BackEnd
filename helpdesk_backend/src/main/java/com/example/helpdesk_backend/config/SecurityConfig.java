@@ -62,6 +62,9 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/chamados").authenticated()
                     .requestMatchers(HttpMethod.GET, "/chamados").authenticated()
                     .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAnyRole("ADMIN", "ATENDENTE")
+                    .requestMatchers(HttpMethod.PATCH, "chamados/*/assumir").hasAnyRole("ADMIN", "ATENDENTE")
+                    .requestMatchers(HttpMethod.PATCH, "chamados/*/status").hasAnyRole("ADMIN", "ATENDENTE")
+                    .requestMatchers(HttpMethod.PATCH, "chamados/*/avaliar").authenticated()
 
                     // Gestão de Anexos
                     .requestMatchers(HttpMethod.POST, "/chamados/*/anexos").authenticated()
@@ -69,6 +72,9 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/anexos/*/download").authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/anexos/*").authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/chamados/*/anexos/*").authenticated()
+
+                    //Logs de Escalonamentos
+                    .requestMatchers(HttpMethod.GET,"/escalonamentos/**").hasAnyRole("ADMIN", "ATENDENTE")
 
                     // Restringe qualquer outra requisição para usuários autenticados
                     .anyRequest().authenticated()

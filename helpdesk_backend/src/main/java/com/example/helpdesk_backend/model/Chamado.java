@@ -73,4 +73,14 @@ public class Chamado {
     @Enumerated(EnumType.STRING)
     @Column(name = "setor_responsavel", length = 30)
     private Setor setor;
+
+    @Column(name = "prazo_limite")
+    private LocalDateTime prazoLimite; //Adicionado
+
+    @Column(name = "nota_avaliacao")
+    private Integer notaAvaliacao; //Escala de 1 a 5
+
+    @Column(name = "comentario_avaliacao", columnDefinition = "TEXT")
+    private String comentarioAvaliacao;
+
 }
