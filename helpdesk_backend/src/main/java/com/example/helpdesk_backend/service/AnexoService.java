@@ -62,23 +62,11 @@ public class AnexoService {
         validarPermissaoFilaEEscalonamento(chamado, usuarioLogado);
 
         try {
-            // Confirmação de escrita/salvamento em disco
-            if (!Files.exists(diretorioUploads)) {
-                Files.createDirectories(diretorioUploads);
-            }
-
-            // Gera nome único no disco para evitar sobrescrever arquivos com o mesmo nome
-            String nomeOriginal = file.getOriginalFilename();
-            String nomeUnico = UUID.randomUUID() + "_" + (nomeOriginal != null ? nomeOriginal : "anexo");
-            Path caminhoDestino = diretorioUploads.resolve(nomeUnico);
-
-            Files.copy(file.getInputStream(), caminhoDestino, StandardCopyOption.REPLACE_EXISTING);
-
             Anexo anexo = new Anexo();
-            anexo.setNomeArquivo(nomeOriginal);
+            anexo.setNomeArquivo(file.getOriginalFilename());
             anexo.setTipoArquivo(file.getContentType() != null ? file.getContentType() : "application/octet-stream");
             anexo.setTamanho(file.getSize());
-            anexo.setCaminhoArquivo(caminhoDestino.toString());
+            anexo.setDados(file.getBytes()); // Irá salvar o arquivo direto na memória/banco
             anexo.setDataUpload(LocalDateTime.now());
             anexo.setChamado(chamado);
             anexo.setEnviadoPor(usuarioLogado);
@@ -110,26 +98,14 @@ public class AnexoService {
                 .toList();
     }
 
-    public Resource carregarArquivoComoRecurso(Long anexoId, String emailUsuarioLogado) {
-        Anexo anexo = anexoRepository.findById(anexoId)
-                .orElseThrow(() -> new BusinessException("Anexo não encontrado."));
+    public Anexo baixarAnexo(Long anexoId, String emailUsuarioLogado){
+        Anexo anexo = anexoRepository.findById(anexoId).orElseThrow(() -> new BusinessException("Anexo não encontrado."));
 
-        Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado).orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado).orElseThrow(() -> new BusinessException("Usuário não encontrado"));
 
         validarPermissaoFilaEEscalonamento(anexo.getChamado(), usuarioLogado);
 
-        try {
-            Path caminho = Paths.get(anexo.getCaminhoArquivo());
-            Resource resource = new UrlResource(caminho.toUri());
-
-            if (resource.exists() || resource.isReadable()) {
-                return resource;
-            } else {
-                throw new BusinessException("Não foi possível ler o arquivo solicitado.");
-            }
-        } catch (MalformedURLException e) {
-            throw new BusinessException("Erro no caminho do arquivo: " + e.getMessage());
-        }
+        return anexo;
     }
 
     public Anexo buscarPorId(Long anexoId) {
@@ -151,15 +127,7 @@ public class AnexoService {
             throw new BusinessException("Você não tem permissão para excluir este anexo.");
         }
 
-        // 1. Remove o arquivo físico da pasta uploads/
-        try {
-            Path caminhoArquivo = Paths.get(anexo.getCaminhoArquivo());
-            Files.deleteIfExists(caminhoArquivo);
-        } catch (IOException e) {
-            throw new BusinessException("Falha ao apagar o arquivo do disco: " + e.getMessage());
-        }
-
-        // 2. Remove o registro do banco de dados
+        // Remove o registro do banco de dados(OBS: O BLOB será deletado automaticamente)
         anexoRepository.delete(anexo);
     }
 
