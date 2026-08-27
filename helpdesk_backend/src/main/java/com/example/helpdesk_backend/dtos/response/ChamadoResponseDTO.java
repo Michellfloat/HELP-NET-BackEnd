@@ -14,6 +14,8 @@ public record ChamadoResponseDTO(
         StatusChamado status,
         NivelAntendente nivelExigido,
         LocalDateTime dataAbertura,
+        LocalDateTime prazoLimite,// <-- ADICIONADO PARA O SLA (RNF03)
+        LocalDateTime dataFechamento,// <-- EXPOSTO PARA MÉTRICAS DO DASHBOARD
         String descricao, 
         String equipamento,
         Setor setor

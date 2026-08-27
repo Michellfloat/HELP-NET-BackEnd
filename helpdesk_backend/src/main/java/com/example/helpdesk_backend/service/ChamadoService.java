@@ -21,6 +21,7 @@ import com.example.helpdesk_backend.model.enums.Categoria;
 import com.example.helpdesk_backend.model.enums.NivelAntendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.model.enums.StatusChamado;
+import com.example.helpdesk_backend.model.enums.Urgencia;
 import com.example.helpdesk_backend.repository.ChamadoRepository;
 import com.example.helpdesk_backend.repository.EscalonamentoLogRepository;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
@@ -72,7 +73,11 @@ public class ChamadoService {
         chamado.setProtocolo(gerarProtocolo());
         chamado.setDescricao(dto.descricao());
         chamado.setEquipamento(dto.equipamento());
+        
+        chamado.setDataAbertura(LocalDateTime.now());
+        chamado.setPrazoLimite(calcularPrazoSla(chamado.getUrgencia(), chamado.getDataAbertura()));
 
+        
         Chamado chamadoSalvo = chamadoRepository.save(chamado);
         return converterParaResponseDTO(chamadoSalvo);
     }
@@ -155,6 +160,17 @@ public class ChamadoService {
         return converterParaResponseDTO(chamadoAtualizado);
     }
 
+    //Adicionando método privado auxiliar no ChamadoService
+    private LocalDateTime calcularPrazoSla(Urgencia urgencia, LocalDateTime dataAbertura){
+        return switch (urgencia){
+            case CRITICA -> dataAbertura.plusHours(4);
+            case ALTA -> dataAbertura.plusHours(8);
+            case MEDIA -> dataAbertura.plusHours(24);
+            case NORMAL -> dataAbertura.plusHours(72);
+
+        };
+    }
+
     private ChamadoResponseDTO converterParaResponseDTO(Chamado chamado) {
         String nomeResponsavel = (chamado.getResponsavel() != null)
                 ? chamado.getResponsavel().getNome()
@@ -170,6 +186,8 @@ public class ChamadoService {
                 chamado.getStatus(),
                 chamado.getNivelExigido(),
                 chamado.getDataAbertura(),
+                chamado.getPrazoLimite(), //Adicionado
+                chamado.getDataFechamento(), //Adicionado
                 chamado.getDescricao(),
                 chamado.getEquipamento(),
                 chamado.getSetor() // <-- Mapeado para o DTO de resposta
