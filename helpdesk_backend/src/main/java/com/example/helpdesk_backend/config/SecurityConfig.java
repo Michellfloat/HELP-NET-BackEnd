@@ -73,6 +73,9 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.DELETE, "/anexos/*").authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/chamados/*/anexos/*").authenticated()
 
+                    //Logs de Escalonamentos
+                    .requestMatchers(HttpMethod.GET,"/escalonamentos/**").hasAnyRole("ADMIN", "ATENDENTE")
+
                     // Restringe qualquer outra requisição para usuários autenticados
                     .anyRequest().authenticated()
             )
