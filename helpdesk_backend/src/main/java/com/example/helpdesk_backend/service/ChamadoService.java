@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.helpdesk_backend.dtos.request.ChamadoAvaliarDTO;
 import com.example.helpdesk_backend.dtos.request.ChamadoCreateDTO;
 import com.example.helpdesk_backend.dtos.request.EscalonarChamadoDTO;
 import com.example.helpdesk_backend.dtos.response.ChamadoResponseDTO;
@@ -77,7 +78,7 @@ public class ChamadoService {
         chamado.setDataAbertura(LocalDateTime.now());
         chamado.setPrazoLimite(calcularPrazoSla(chamado.getUrgencia(), chamado.getDataAbertura()));
 
-        
+
         Chamado chamadoSalvo = chamadoRepository.save(chamado);
         return converterParaResponseDTO(chamadoSalvo);
     }
@@ -171,6 +172,42 @@ public class ChamadoService {
         };
     }
 
+    @Transactional
+    public ChamadoResponseDTO alterarStatus(Long id, StatusChamado novoStatus){
+        Chamado chamado = chamadoRepository.findById(id).orElseThrow(() -> new BusinessException("Chamado não encontrado."));
+
+        chamado.setStatus(novoStatus);
+
+        //RN: Ao resolver ou fechar o chamado, registra a data de fechamento para as métricas do dia
+
+        if (novoStatus == StatusChamado.RESOLVIDO || novoStatus == StatusChamado.FECHADO) {
+            chamado.setDataFechamento(LocalDateTime.now());
+        }else{
+            chamado.setDataFechamento(null);
+        }
+
+        return converterParaResponseDTO(chamadoRepository.save(chamado));
+
+    }
+
+    @Transactional
+    public ChamadoResponseDTO avaliarChamado(Long id, ChamadoAvaliarDTO dto, String emailSolicitante){ //Criado
+        Chamado chamado = chamadoRepository.findById(id).orElseThrow(() -> new BusinessException("Chamado não encontrado."));
+
+        if (!chamado.getSolicitante().getEmail().equals(emailSolicitante)) {
+            throw new BusinessException("Apenas o solicitante original pode avaliar este chamado.");
+        }
+
+        if (chamado.getStatus() != StatusChamado.RESOLVIDO && chamado.getStatus() != StatusChamado.FECHADO) {
+            throw new BusinessException("Apenas chamados resolvidos ou fechados podem receber avaliação.");
+        }
+
+        chamado.setNotaAvaliacao(dto.notaAvaliacao());
+        chamado.setComentarioAvaliacao(dto.comentarioAvaliacao());
+
+        return converterParaResponseDTO(chamadoRepository.save(chamado));
+    }
+
     private ChamadoResponseDTO converterParaResponseDTO(Chamado chamado) {
         String nomeResponsavel = (chamado.getResponsavel() != null)
                 ? chamado.getResponsavel().getNome()
@@ -188,6 +225,8 @@ public class ChamadoService {
                 chamado.getDataAbertura(),
                 chamado.getPrazoLimite(), //Adicionado
                 chamado.getDataFechamento(), //Adicionado
+                chamado.getNotaAvaliacao(),// <-- INCLUÍDO
+                chamado.getComentarioAvaliacao(),// <-- INCLUÍDO
                 chamado.getDescricao(),
                 chamado.getEquipamento(),
                 chamado.getSetor() // <-- Mapeado para o DTO de resposta

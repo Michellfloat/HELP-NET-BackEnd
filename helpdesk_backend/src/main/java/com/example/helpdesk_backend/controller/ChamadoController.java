@@ -9,14 +9,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.helpdesk_backend.dtos.request.ChamadoAvaliarDTO;
 import com.example.helpdesk_backend.dtos.request.ChamadoCreateDTO;
 import com.example.helpdesk_backend.dtos.response.ChamadoResponseDTO;
+import com.example.helpdesk_backend.model.enums.StatusChamado;
 import com.example.helpdesk_backend.service.ChamadoService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-
 
 @RestController
 @RequestMapping("/chamados")
@@ -52,11 +52,26 @@ public class ChamadoController {
     }
 
     @PatchMapping("/{id}/assumir")
-    public ResponseEntity<ChamadoResponseDTO>assumirChamado(
-        @PathVariable Long id,
-        Authentication authentication
-    ){
+    public ResponseEntity<ChamadoResponseDTO> assumirChamado(
+            @PathVariable Long id,
+            Authentication authentication) {
         String emailAtendente = authentication.getName();
         return ResponseEntity.ok(chamadoService.assumirChamado(id, emailAtendente));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ChamadoResponseDTO> alterarStatus(
+            @PathVariable Long id,
+            @RequestParam StatusChamado novoStatus) {
+        return ResponseEntity.ok(chamadoService.alterarStatus(id, novoStatus));
+    }
+
+    @PatchMapping("/{id}/avaliar")
+    public ResponseEntity<ChamadoResponseDTO> avaliarChamado(
+            @PathVariable Long id,
+            @RequestBody @Valid ChamadoAvaliarDTO dto,
+            Authentication authentication) {
+        String emailSolicitante = authentication.getName();
+        return ResponseEntity.ok(chamadoService.avaliarChamado(id, dto, emailSolicitante));
     }
 }

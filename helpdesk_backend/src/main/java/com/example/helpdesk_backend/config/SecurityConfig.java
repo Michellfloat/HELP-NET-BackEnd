@@ -63,6 +63,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/chamados").authenticated()
                     .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAnyRole("ADMIN", "ATENDENTE")
                     .requestMatchers(HttpMethod.PATCH, "chamados/*/assumir").hasAnyRole("ADMIN", "ATENDENTE")
+                    .requestMatchers(HttpMethod.PATCH, "chamados/*/status").hasAnyRole("ADMIN", "ATENDENTE")
+                    .requestMatchers(HttpMethod.PATCH, "chamados/*/avaliar").authenticated()
 
                     // Gestão de Anexos
                     .requestMatchers(HttpMethod.POST, "/chamados/*/anexos").authenticated()
