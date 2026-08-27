@@ -128,6 +128,33 @@ public class ChamadoService {
         return data + "-" + hash;
     }
 
+    @Transactional
+    public ChamadoResponseDTO assumirChamado(Long chamadoId, String emailAtendente){
+        Chamado chamado = chamadoRepository.findById(chamadoId).orElseThrow(() -> new BusinessException("Chamado não encontrado."));
+
+        Usuario atendente = usuarioRepository.findByEmail(emailAtendente).orElseThrow(() -> new BusinessException("Atendente não encontrado."));
+
+        // Validação de Perfil
+        if (atendente.getPerfil() != Perfil.ATENDENTE && atendente.getPerfil() != Perfil.ADMIN) {
+            throw new BusinessException("Apenas atendentes ou administradores podem assumir chamados.");
+        }
+
+        // Validação de Status
+        if (chamado.getStatus() == StatusChamado.FECHADO || chamado.getStatus() == StatusChamado.RESOLVIDO) {
+            throw new BusinessException("Não é possível assumir um chamado já encerrado ou resolvido.");
+        }
+
+        // Atualiza a posse e avança o status caso estivesse aberto
+        chamado.setResponsavel(atendente);
+        if (chamado.getStatus() == StatusChamado.ABERTO) {
+            chamado.setStatus(StatusChamado.EM_ANDAMENTO);
+        }
+
+        Chamado chamadoAtualizado = chamadoRepository.save(chamado);
+
+        return converterParaResponseDTO(chamadoAtualizado);
+    }
+
     private ChamadoResponseDTO converterParaResponseDTO(Chamado chamado) {
         String nomeResponsavel = (chamado.getResponsavel() != null)
                 ? chamado.getResponsavel().getNome()

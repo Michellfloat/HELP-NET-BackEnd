@@ -50,4 +50,13 @@ public class ChamadoController {
         String emailAtendente = authentication.getName();
         return ResponseEntity.ok(chamadoService.escalonarChamado(id, dto, emailAtendente));
     }
+
+    @PatchMapping("/{id}/assumir")
+    public ResponseEntity<ChamadoResponseDTO>assumirChamado(
+        @PathVariable Long id,
+        Authentication authentication
+    ){
+        String emailAtendente = authentication.getName();
+        return ResponseEntity.ok(chamadoService.assumirChamado(id, emailAtendente));
+    }
 }
