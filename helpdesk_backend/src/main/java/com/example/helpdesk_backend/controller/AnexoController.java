@@ -2,7 +2,7 @@ package com.example.helpdesk_backend.controller;
 
 import java.util.List;
 
-import org.springframework.core.io.Resource;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -50,17 +50,19 @@ public class AnexoController {
     }
 
     @GetMapping("/anexos/{anexoId}/download")
-    public ResponseEntity<Resource> downloadAnexo(
+    public ResponseEntity<byte[]> downloadAnexo(
             @PathVariable Long anexoId,
             Authentication authentication) {
         String email = authentication.getName();
-        Resource file = anexoService.carregarArquivoComoRecurso(anexoId, email);
-        Anexo anexo = anexoService.buscarPorId(anexoId);
+        
+        //Obtém a entidade que agora contém os bytes do arquivo no banco
+        Anexo anexo = anexoService.baixarAnexo(anexoId, email);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(anexo.getTipoArquivo()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename\"" + anexo.getNomeArquivo() + "\"")
-                .body(file);
+                //O cabeçalho "attachment; filename=..." instrui o cliente a baixar o arquivo
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + anexo.getNomeArquivo() + "\"")
+                .body(anexo.getDados());
     }
 
     @DeleteMapping("/anexos/{anexoId}")

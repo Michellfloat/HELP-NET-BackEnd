@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -35,8 +36,12 @@ public class Anexo {
     @Column(nullable = false)
     private Long tamanho;
 
-    @Column(nullable = false)
-    private String caminhoArquivo;
+    // @Column(nullable = false)
+    // private String caminhoArquivo;
+
+    @Lob
+    @Column(name = "dados_arquivo", columnDefinition = "LONGBLOB") // O columnDefinition varia (LONGBLOB no MySQL, BYTEA no Postgres)
+    private byte[] dados;
 
     @Column(nullable = false)
     private LocalDateTime dataUpload;
