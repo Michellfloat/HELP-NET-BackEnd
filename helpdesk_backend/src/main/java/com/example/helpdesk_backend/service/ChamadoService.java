@@ -16,6 +16,7 @@ import com.example.helpdesk_backend.dtos.request.EscalonarChamadoDTO;
 import com.example.helpdesk_backend.dtos.response.ChamadoResponseDTO;
 import com.example.helpdesk_backend.exception.BusinessException;
 import com.example.helpdesk_backend.model.Chamado;
+import com.example.helpdesk_backend.model.Equipamento;
 import com.example.helpdesk_backend.model.EscalonamentoLog;
 import com.example.helpdesk_backend.model.Usuario;
 import com.example.helpdesk_backend.model.enums.Categoria;
@@ -24,6 +25,7 @@ import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.model.enums.StatusChamado;
 import com.example.helpdesk_backend.model.enums.Urgencia;
 import com.example.helpdesk_backend.repository.ChamadoRepository;
+import com.example.helpdesk_backend.repository.EquipamentoRepository;
 import com.example.helpdesk_backend.repository.EscalonamentoLogRepository;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
 
@@ -36,6 +38,7 @@ public class ChamadoService {
     private final ChamadoRepository chamadoRepository;
     private final UsuarioRepository usuarioRepository;
     private final EscalonamentoLogRepository escalonamentoLogRepository;
+    private final EquipamentoRepository equipamentoRepository; // Injetado para validar o equipamento
 
     @Transactional
     public ChamadoResponseDTO criarChamado(ChamadoCreateDTO dto, String emailUsuarioLogado) {
@@ -59,7 +62,6 @@ public class ChamadoService {
         chamado.setSolicitante(solicitante);
         chamado.setCategoria(dto.categoria());
 
-        // --- REGRA DE NEGÓCIO: Roteamento e Urgência Automática ---
         if (dto.categoria() == Categoria.OUTROS) {
             chamado.setUrgencia(dto.urgencia());
             chamado.setSetor(null);
@@ -73,11 +75,21 @@ public class ChamadoService {
         chamado.setDataAbertura(LocalDateTime.now());
         chamado.setProtocolo(gerarProtocolo());
         chamado.setDescricao(dto.descricao());
-        chamado.setEquipamento(dto.equipamento());
-        
-        chamado.setDataAbertura(LocalDateTime.now());
-        chamado.setPrazoLimite(calcularPrazoSla(chamado.getUrgencia(), chamado.getDataAbertura()));
 
+        // Vinculação e validação do Equipamento
+        if (dto.equipamentoId() != null) {
+            Equipamento equipamento = equipamentoRepository.findById(dto.equipamentoId())
+                    .orElseThrow(() -> new BusinessException("Equipamento informado não encontrado."));
+
+            if (!equipamento.getAtivo()) {
+                throw new BusinessException("Não é possível abrir um chamado para um equipamento inativado.");
+            }
+            chamado.setEquipamento(equipamento);
+        } else {
+            chamado.setEquipamento(null);
+        }
+        
+        chamado.setPrazoLimite(calcularPrazoSla(chamado.getUrgencia(), chamado.getDataAbertura()));
 
         Chamado chamadoSalvo = chamadoRepository.save(chamado);
         return converterParaResponseDTO(chamadoSalvo);
@@ -140,17 +152,14 @@ public class ChamadoService {
 
         Usuario atendente = usuarioRepository.findByEmail(emailAtendente).orElseThrow(() -> new BusinessException("Atendente não encontrado."));
 
-        // Validação de Perfil
         if (atendente.getPerfil() != Perfil.ATENDENTE && atendente.getPerfil() != Perfil.ADMIN) {
             throw new BusinessException("Apenas atendentes ou administradores podem assumir chamados.");
         }
 
-        // Validação de Status
         if (chamado.getStatus() == StatusChamado.FECHADO || chamado.getStatus() == StatusChamado.RESOLVIDO) {
             throw new BusinessException("Não é possível assumir um chamado já encerrado ou resolvido.");
         }
 
-        // Atualiza a posse e avança o status caso estivesse aberto
         chamado.setResponsavel(atendente);
         if (chamado.getStatus() == StatusChamado.ABERTO) {
             chamado.setStatus(StatusChamado.EM_ANDAMENTO);
@@ -161,14 +170,12 @@ public class ChamadoService {
         return converterParaResponseDTO(chamadoAtualizado);
     }
 
-    //Adicionando método privado auxiliar no ChamadoService
     private LocalDateTime calcularPrazoSla(Urgencia urgencia, LocalDateTime dataAbertura){
         return switch (urgencia){
             case CRITICA -> dataAbertura.plusHours(4);
             case ALTA -> dataAbertura.plusHours(8);
             case MEDIA -> dataAbertura.plusHours(24);
             case NORMAL -> dataAbertura.plusHours(72);
-
         };
     }
 
@@ -178,8 +185,6 @@ public class ChamadoService {
 
         chamado.setStatus(novoStatus);
 
-        //RN: Ao resolver ou fechar o chamado, registra a data de fechamento para as métricas do dia
-
         if (novoStatus == StatusChamado.RESOLVIDO || novoStatus == StatusChamado.FECHADO) {
             chamado.setDataFechamento(LocalDateTime.now());
         }else{
@@ -187,11 +192,10 @@ public class ChamadoService {
         }
 
         return converterParaResponseDTO(chamadoRepository.save(chamado));
-
     }
 
     @Transactional
-    public ChamadoResponseDTO avaliarChamado(Long id, ChamadoAvaliarDTO dto, String emailSolicitante){ //Criado
+    public ChamadoResponseDTO avaliarChamado(Long id, ChamadoAvaliarDTO dto, String emailSolicitante){
         Chamado chamado = chamadoRepository.findById(id).orElseThrow(() -> new BusinessException("Chamado não encontrado."));
 
         if (!chamado.getSolicitante().getEmail().equals(emailSolicitante)) {
@@ -213,23 +217,29 @@ public class ChamadoService {
                 ? chamado.getResponsavel().getNome()
                 : "Não atribuído";
 
+        Long equipId = chamado.getEquipamento() != null ? chamado.getEquipamento().getId() : null;
+        String equipNome = chamado.getEquipamento() != null ? chamado.getEquipamento().getNome() : null;
+
         return new ChamadoResponseDTO(
                 chamado.getId(),
                 chamado.getProtocolo(),
-                chamado.getSolicitante().getEmail(),
+                chamado.getSolicitante().getId(),
+                chamado.getSolicitante().getNome(),
+                chamado.getResponsavel() != null ? chamado.getResponsavel().getId() : null,
                 nomeResponsavel,
                 chamado.getCategoria(),
                 chamado.getUrgencia(),
                 chamado.getStatus(),
                 chamado.getNivelExigido(),
                 chamado.getDataAbertura(),
-                chamado.getPrazoLimite(), //Adicionado
-                chamado.getDataFechamento(), //Adicionado
-                chamado.getNotaAvaliacao(),// <-- INCLUÍDO
-                chamado.getComentarioAvaliacao(),// <-- INCLUÍDO
+                chamado.getDataFechamento(),
                 chamado.getDescricao(),
-                chamado.getEquipamento(),
-                chamado.getSetor() // <-- Mapeado para o DTO de resposta
+                equipId,
+                equipNome,
+                chamado.getSetor(),
+                chamado.getPrazoLimite(),
+                chamado.getNotaAvaliacao(),
+                chamado.getComentarioAvaliacao()
         );
     }
 }
