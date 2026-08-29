@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record ChamadoCreateDTO(
         
-        Long solicitanteId,
+        Long solicitanteId, // Recomendação: remover futuramente e pegar o ID direto do token JWT
         
         @NotNull(message = "A categoria é obrigatória.")
         Categoria categoria,
@@ -19,6 +19,7 @@ public record ChamadoCreateDTO(
         @NotBlank(message = "A descrição detalhada não pode estar vazia.")
         String descricao,
         
-        String equipamento // Mantido sem validação estrita (NotBlank) caso não seja obrigatório para todos os casos
+        // Agora trafegamos apenas o ID em vez da String
+        Long equipamentoId 
 ) {
 }

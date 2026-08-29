@@ -15,13 +15,15 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "tab_chamados")
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
@@ -32,7 +34,7 @@ public class Chamado {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String protocolo; // RF08: Protocolo único
+    private String protocolo;
 
     @ManyToOne
     @JoinColumn(name = "solicitante_id", nullable = false)
@@ -40,7 +42,7 @@ public class Chamado {
 
     @ManyToOne
     @JoinColumn(name = "responsavel_id", nullable = true)
-    private Usuario responsavel; // Pode ser nulo até um atendente assumir
+    private Usuario responsavel;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -67,20 +69,21 @@ public class Chamado {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String descricao;
 
-    @Column(length = 100)
-    private String equipamento;
+    // VÍNCULO COM A NOVA ENTIDADE
+    @ManyToOne
+    @JoinColumn(name = "equipamento_id")
+    private Equipamento equipamento; 
 
     @Enumerated(EnumType.STRING)
     @Column(name = "setor_responsavel", length = 30)
     private Setor setor;
 
     @Column(name = "prazo_limite")
-    private LocalDateTime prazoLimite; //Adicionado
+    private LocalDateTime prazoLimite;
 
     @Column(name = "nota_avaliacao")
-    private Integer notaAvaliacao; //Escala de 1 a 5
+    private Integer notaAvaliacao;
 
     @Column(name = "comentario_avaliacao", columnDefinition = "TEXT")
     private String comentarioAvaliacao;
-
 }
