@@ -1,8 +1,14 @@
 package com.example.helpdesk_backend.config;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -14,8 +20,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.example.helpdesk_backend.exception.StandardError;
 import com.example.helpdesk_backend.security.JwtAuthenticationFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -26,7 +35,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class SecurityConfig {
 
     private final CorsConfigurationSource corsConfigurationSource;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter; //Adicionado Recentemente
+    private final JwtAuthenticationFilter jwtAuthenticationFilter; 
+    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -79,6 +89,20 @@ public class SecurityConfig {
                     // Restringe qualquer outra requisição para usuários autenticados
                     .anyRequest().authenticated()
             )
+            //Seguindo os passos e adicionando o Handler
+            .exceptionHandling(ex -> ex
+                //401: "Não sei quem você é (sem token, token inválido ou expirado) -> Não Autorizado
+                .authenticationEntryPoint((req, res, e) -> escreverErro(
+                    res, HttpStatus.UNAUTHORIZED,
+                    "Sessão expirada ou token inválido", req.getRequestURI()
+                ))
+
+                //403: Sei quem você é, mas não pode passar pois seu perfil não possui permissão -> Proibido
+                .accessDeniedHandler((req, res, e) -> escreverErro(
+                    res, HttpStatus.FORBIDDEN,
+                    "Seu perfil não tem permissão para acessar este recurso.", req.getRequestURI()
+                ))
+            )
             
             // 5. Adiciona o filtro JWT antes do filtro padrão do Spring
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -95,5 +119,13 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    //Aqui a criação do Método para o erro. Segue o mesmo formato do GlobalExceptionHandlerm para o contrato não ter exceção
+    private void escreverErro(HttpServletResponse res, HttpStatus status, String message, String path) throws IOException{
+        res.setStatus(status.value());
+        res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        res.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        objectMapper.writeValue(res.getWriter(), new StandardError(LocalDateTime.now(), status.value(), message, path));
     }
 }
