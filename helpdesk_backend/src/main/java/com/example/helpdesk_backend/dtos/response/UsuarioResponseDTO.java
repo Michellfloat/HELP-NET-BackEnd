@@ -12,8 +12,7 @@ public record UsuarioResponseDTO(
     String cargo,
     Setor setor,
     Perfil perfil,
-    NivelAntendente nivelAntendente,
-    Boolean cadastroCompleto
+    NivelAntendente nivelAntendente
 ) {
 
 }

@@ -2,7 +2,7 @@ package com.example.helpdesk_backend.dtos.request;
 
 import com.example.helpdesk_backend.model.enums.NivelAntendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
-
+import com.example.helpdesk_backend.model.enums.Setor;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -23,7 +23,13 @@ public record UserCreateDTO(
     @NotNull(message = "O perfil é obrigatório")
     Perfil perfil,
 
-    NivelAntendente nivelAntendente //Nulo para usuários comuns, obrigatório para atendentes
+    NivelAntendente nivelAntendente, //Nulo para usuários comuns, obrigatório para atendentes
+
+    @NotBlank(message = "Cargo é obrigatório")
+    String cargo, //sujeito a futuras mudanças(Criação do Enum "cargo" no futuro(?))
+
+    @NotNull(message = "Setor é obrigatório")
+    Setor setor
 ) {
      
 }

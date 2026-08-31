@@ -36,6 +36,7 @@ public class JwtService {
     public String gerarToken(Usuario usuario){
         return Jwts.builder()
         .subject(usuario.getEmail())
+        .claim("id", usuario.getId())
         .claim("nome", usuario.getNome())
         .claim("perfil", usuario.getPerfil().name())
         .issuedAt(new Date(System.currentTimeMillis()))
