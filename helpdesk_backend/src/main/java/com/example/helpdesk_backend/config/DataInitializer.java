@@ -27,7 +27,6 @@ public class DataInitializer implements CommandLineRunner{
             admin.setPerfil(Perfil.ADMIN);
             admin.setCargo("Administrador Geral");
             admin.setSetor(Setor.DESENVOLVIMENTO);
-            admin.setCadastroCompleto(true);
 
             usuarioRepository.save(admin);
             System.out.println(">>> USUÁRIO ADMIN CRIADO COM SUCESSO: admin@helpdesk.com / 123 (Perfil: ADMIN) <<<");

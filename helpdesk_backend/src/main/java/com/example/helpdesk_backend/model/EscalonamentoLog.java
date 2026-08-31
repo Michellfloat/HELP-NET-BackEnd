@@ -2,7 +2,7 @@ package com.example.helpdesk_backend.model;
 
 import java.time.LocalDateTime;
 
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.NivelAtendente;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -38,10 +38,10 @@ public class EscalonamentoLog {
     private Usuario atendente;
 
     @Column(nullable = false)
-    private NivelAntendente nivelAnterior;
+    private NivelAtendente nivelAnterior;
 
     @Column(nullable = false)
-    private NivelAntendente novoNivel;
+    private NivelAtendente novoNivel;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String justificativa; // RN07: Justificativa obrigatória
