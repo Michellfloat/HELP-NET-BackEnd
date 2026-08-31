@@ -8,7 +8,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import com.example.helpdesk_backend.model.Chamado;
 import com.example.helpdesk_backend.model.Usuario;
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.model.enums.Setor;
 import com.example.helpdesk_backend.model.enums.StatusChamado;
@@ -21,7 +21,7 @@ public class ChamadoSpecification {
         StatusChamado status,
         Urgencia urgencia,
         Setor setor,
-        NivelAntendente nivelExigido,
+        NivelAtendente nivelExigido,
         Long solicitanteId,
         Long responsavelId,
         Usuario usuarioLogado
@@ -38,7 +38,7 @@ public class ChamadoSpecification {
                 //Atendente só visualiza chamados cujo nível exigido seja <= ao seu nível de atendente.
 
                 if (usuarioLogado.getNivelAntendente() != null) {
-                    List<NivelAntendente> niveisPermitidos = Arrays.stream(NivelAntendente.values()).filter(n -> n.ordinal() <= usuarioLogado.getNivelAntendente().ordinal()).toList();
+                    List<NivelAtendente> niveisPermitidos = Arrays.stream(NivelAtendente.values()).filter(n -> n.ordinal() <= usuarioLogado.getNivelAntendente().ordinal()).toList();
 
                     predicates.add(root.get("nivelExigido").in(niveisPermitidos));
                 }else{

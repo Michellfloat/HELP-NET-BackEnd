@@ -14,7 +14,7 @@ public record ChamadoResponseDTO(
         Categoria categoria,
         Urgencia urgencia,
         StatusChamado status,
-        NivelAntendente nivelExigido,
+        NivelAtendente nivelExigido,
         LocalDateTime dataAbertura,
         LocalDateTime dataFechamento,
         String descricao,

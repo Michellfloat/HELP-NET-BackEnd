@@ -1,6 +1,6 @@
 package com.example.helpdesk_backend.dtos.request;
 
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.model.enums.Setor;
 
@@ -23,7 +23,7 @@ public record UserCreateDTO(
     @NotNull(message = "O perfil é obrigatório")
     Perfil perfil,
 
-    NivelAntendente nivelAntendente, //Nulo para usuários comuns, obrigatório para atendentes
+    NivelAtendente nivelAntendente, //Nulo para usuários comuns, obrigatório para atendentes
 
     @NotBlank(message = "Cargo é obrigatório")
     String cargo, //sujeito a futuras mudanças(Criação do Enum "cargo" no futuro(?))
