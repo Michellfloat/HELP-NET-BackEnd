@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,12 +23,14 @@ import com.example.helpdesk_backend.model.Usuario;
 import com.example.helpdesk_backend.model.enums.Categoria;
 import com.example.helpdesk_backend.model.enums.NivelAntendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
+import com.example.helpdesk_backend.model.enums.Setor;
 import com.example.helpdesk_backend.model.enums.StatusChamado;
 import com.example.helpdesk_backend.model.enums.Urgencia;
 import com.example.helpdesk_backend.repository.ChamadoRepository;
 import com.example.helpdesk_backend.repository.EquipamentoRepository;
 import com.example.helpdesk_backend.repository.EscalonamentoLogRepository;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
+import com.example.helpdesk_backend.repository.specifications.ChamadoSpecification;
 
 import lombok.RequiredArgsConstructor;
 
@@ -100,6 +103,33 @@ public class ChamadoService {
         return converterParaResponseDTO(chamadoSalvo);
     }
 
+    public ChamadoResponseDTO buscarPorId(Long id, String emailUsuarioLogado){
+        Chamado chamado = chamadoRepository.findById(id).orElseThrow(() -> new BusinessException("Chamado não encontrado."));
+
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado).orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
+
+        validarPermissaoAcessoChamado(chamado, usuarioLogado);
+
+        return converterParaResponseDTO(chamado);
+    }
+
+    public Page<ChamadoResponseDTO> listarChamados(
+        StatusChamado status,
+        Urgencia urgencia,
+        Setor setor,
+        NivelAntendente nivelExigido,
+        Long solicitanteId,
+        Long responsavelId,
+        String emailUsuarioLogado,
+        Pageable pageable
+    ){
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado).orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
+
+        Specification<Chamado> spec = ChamadoSpecification.comFiltrosEVisibilisade(status, urgencia, setor, nivelExigido, solicitanteId, responsavelId, usuarioLogado);
+
+        return chamadoRepository.findAll(spec, pageable).map(this::converterParaResponseDTO);
+    }
+
     @Transactional
     public ChamadoResponseDTO escalonarChamado(Long chamadoId, EscalonarChamadoDTO dto, String emailAtendente) {
         Chamado chamado = chamadoRepository.findById(chamadoId)
@@ -127,6 +157,25 @@ public class ChamadoService {
 
         Chamado chamadoAtualizado = chamadoRepository.save(chamado);
         return converterParaResponseDTO(chamadoAtualizado);
+    }
+
+    public void validarPermissaoAcessoChamado(Chamado chamado, Usuario usuario){
+        if (usuario.getPerfil() == Perfil.ADMIN) {
+            return;
+        }
+
+        if (usuario.getPerfil() == Perfil.USUARIO) {
+            if (!chamado.getSolicitante().getId().equals(usuario.getId())) {
+              throw new BusinessException("Acesso negado: Você só pode acessar seus próprios chamados.");  
+            }
+            return;
+        }
+
+        if (usuario.getPerfil() == Perfil.ATENDENTE) {
+            if (usuario.getNivelAntendente() == null || usuario.getNivelAntendente().ordinal() < chamado.getNivelExigido().ordinal()) {
+                throw new BusinessException("Acesso negado: Seu nível de atendente (" + usuario.getNivelAntendente() + ") é inferior ao nível exigido pelo chamado (" +chamado.getNivelExigido() + ").");
+            }
+        }
     }
 
     public Page<ChamadoResponseDTO> listarFilaChamados(Pageable pageable) {

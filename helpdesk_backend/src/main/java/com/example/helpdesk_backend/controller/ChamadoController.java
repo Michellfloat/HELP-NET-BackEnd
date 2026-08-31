@@ -12,7 +12,10 @@ import org.springframework.web.bind.annotation.*;
 import com.example.helpdesk_backend.dtos.request.ChamadoAvaliarDTO;
 import com.example.helpdesk_backend.dtos.request.ChamadoCreateDTO;
 import com.example.helpdesk_backend.dtos.response.ChamadoResponseDTO;
+import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.Setor;
 import com.example.helpdesk_backend.model.enums.StatusChamado;
+import com.example.helpdesk_backend.model.enums.Urgencia;
 import com.example.helpdesk_backend.service.ChamadoService;
 
 import jakarta.validation.Valid;
@@ -36,7 +39,32 @@ public class ChamadoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ChamadoResponseDTO> buscarPorId(
+        @PathVariable Long id,
+        Authentication authentication
+    ){
+        String emailUsuarioLogado = authentication.getName();
+
+        return ResponseEntity.ok(chamadoService.buscarPorId(id, emailUsuarioLogado));
+    }
+
     @GetMapping
+    public ResponseEntity<Page<ChamadoResponseDTO>> listarChamados(
+        @RequestParam(required = false) StatusChamado status,
+        @RequestParam(required = false) Urgencia urgencia,
+        @RequestParam(required = false) Setor setor,
+        @RequestParam(required = false) NivelAntendente nivelExigido,
+        @RequestParam(required = false) Long solicitanteId,
+        @RequestParam(required = false) Long responsavelId,
+        Pageable pageable,
+        Authentication authentication
+    ){
+        String emailUsuarioLogado = authentication.getName();
+        return ResponseEntity.ok(chamadoService.listarChamados(status, urgencia, setor, nivelExigido, solicitanteId, responsavelId, emailUsuarioLogado, pageable));
+    }
+
+    @GetMapping("/fila")
     public ResponseEntity<Page<ChamadoResponseDTO>> listarFilaChamados(Pageable pageable) {
         return ResponseEntity.ok(chamadoService.listarFilaChamados(pageable));
     }
