@@ -55,10 +55,12 @@ public class SecurityConfig {
 
                         // Acesso público ap Swagger UI e à documentação OpenAPI
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
                         // Rota pública de Autenticação
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
 
-                        //Usuários: Permite que qualquer usuário autenticado consulte seus próprios dados
+                        // Usuários: Permite que qualquer usuário autenticado consulte seus próprios
+                        // dados
                         .requestMatchers(HttpMethod.GET, "/usuarios/me").authenticated()
 
                         // Gestão de Usuários: Restrita a ADMIN e ATENDENTE
@@ -67,10 +69,18 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE")
                         .requestMatchers(HttpMethod.DELETE, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE")
 
+                        // Gestão de Equipamentos
+                        .requestMatchers(HttpMethod.GET, "/equipamentos").authenticated() // Usuários precisam listar
+                                                                                          // para vincular ao chamado
+                        .requestMatchers(HttpMethod.POST, "/equipamentos").hasAnyRole("ADMIN", "ATENDENTE")
+                        .requestMatchers(HttpMethod.PUT, "/equipamentos/*").hasAnyRole("ADMIN", "ATENDENTE")
+                        .requestMatchers(HttpMethod.DELETE, "/equipamentos/*").hasAnyRole("ADMIN", "ATENDENTE")
 
                         // Gestão de Chamados
                         .requestMatchers(HttpMethod.POST, "/chamados").authenticated()
                         .requestMatchers(HttpMethod.GET, "/chamados").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/chamados/fila").hasAnyRole("ADMIN", "ATENDENTE")
+                        .requestMatchers(HttpMethod.GET, "/chamados/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/chamados/*/escalonar").hasAnyRole("ADMIN", "ATENDENTE")
                         .requestMatchers(HttpMethod.PATCH, "/chamados/*/assumir").hasAnyRole("ADMIN", "ATENDENTE")
                         .requestMatchers(HttpMethod.PATCH, "/chamados/*/status").hasAnyRole("ADMIN", "ATENDENTE")
@@ -83,12 +93,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/anexos/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/chamados/*/anexos/*").authenticated()
 
-                        // Logs de Escalonamentos
+                        // Logs de Escalonamentos: Apenas para ADMINs e ATENDENTEs
                         .requestMatchers(HttpMethod.GET, "/escalonamentos/**").hasAnyRole("ADMIN", "ATENDENTE")
 
                         // Restringe qualquer outra requisição para usuários autenticados
                         .anyRequest().authenticated())
-                // Seguindo os passos e adicionando o Handler
+
+                // 5. Handlers para tratamento personalizado de erros de autenticação e
+                // autorização
                 .exceptionHandling(ex -> ex
                         // 401: "Não sei quem você é (sem token, token inválido ou expirado) -> Não
                         // Autorizado
@@ -102,7 +114,7 @@ public class SecurityConfig {
                                 res, HttpStatus.FORBIDDEN,
                                 "Seu perfil não tem permissão para acessar este recurso.", req.getRequestURI())))
 
-                // 5. Adiciona o filtro JWT antes do filtro padrão do Spring
+                // 6. Adiciona o filtro JWT antes do filtro padrão do Spring
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
