@@ -225,6 +225,7 @@ public class ChamadoService {
                 chamado.getProtocolo(),
                 chamado.getSolicitante().getId(),
                 chamado.getSolicitante().getNome(),
+                chamado.getSolicitante().getEmail(),
                 chamado.getResponsavel() != null ? chamado.getResponsavel().getId() : null,
                 nomeResponsavel,
                 chamado.getCategoria(),

@@ -56,12 +56,12 @@ public class JwtService {
         } catch (ExpiredJwtException e){
             //Agora: Se espera que o usuário só precise entrar de novo.
             log.debug("Token expirado para {}", e.getClaims().getSubject());
-            return null; //Token inválido ou expirado
+            return null; //Token inválido/expirado
         } catch (JwtException e){
             //Inesperado: Assinatura, formato ou chave Token
             log.warn("Token Rejeitado: {}",e.getMessage());
 
-            return null;//Token inválido ou expirado
+            return null;//Token inválido/rejeitado
         }
         
     }
