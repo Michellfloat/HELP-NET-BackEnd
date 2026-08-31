@@ -58,11 +58,16 @@ public class ChamadoService {
             }
         }
 
+
         Chamado chamado = new Chamado();
         chamado.setSolicitante(solicitante);
         chamado.setCategoria(dto.categoria());
 
+        // Validação condicional da Urgência
         if (dto.categoria() == Categoria.OUTROS) {
+            if (dto.urgencia() == null) {
+                throw new BusinessException("Para a categoria OUTROS a urgência é obrigatória.");
+            }
             chamado.setUrgencia(dto.urgencia());
             chamado.setSetor(null);
         } else {

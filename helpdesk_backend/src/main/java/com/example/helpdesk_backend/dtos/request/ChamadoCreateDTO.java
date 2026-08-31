@@ -13,7 +13,7 @@ public record ChamadoCreateDTO(
         @NotNull(message = "A categoria é obrigatória.")
         Categoria categoria,
         
-        @NotNull(message = "A urgência é obrigatória.")
+        //Retirado a obrigatoriedade da urgência
         Urgencia urgencia,
         
         @NotBlank(message = "A descrição detalhada não pode estar vazia.")
