@@ -69,6 +69,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE")
                         .requestMatchers(HttpMethod.DELETE, "/usuarios/*").hasAnyRole("ADMIN", "ATENDENTE")
 
+                        // Usuários: Troca da própria senha (Qualquer autenticado)
+                        .requestMatchers(HttpMethod.PATCH, "/usuarios/me/senha").authenticated()
+
+                        // Usuários: Redefinição de senha por Admin (Apenas ADMIN)
+                        .requestMatchers(HttpMethod.PATCH, "/usuarios/*/senha").hasRole("ADMIN")
+
                         // Gestão de Equipamentos
                         .requestMatchers(HttpMethod.GET, "/equipamentos").authenticated() // Usuários precisam listar
                                                                                           // para vincular ao chamado
@@ -85,6 +91,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/chamados/*/assumir").hasAnyRole("ADMIN", "ATENDENTE")
                         .requestMatchers(HttpMethod.PATCH, "/chamados/*/status").hasAnyRole("ADMIN", "ATENDENTE")
                         .requestMatchers(HttpMethod.PATCH, "/chamados/*/avaliar").authenticated()
+
+                        // Gestão de Mensagens do Mini Chat
+                        .requestMatchers(HttpMethod.GET, "/chamados/*/mensagens").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/chamados/*/mensagens").authenticated()
 
                         // Gestão de Anexos
                         .requestMatchers(HttpMethod.POST, "/chamados/*/anexos").authenticated()

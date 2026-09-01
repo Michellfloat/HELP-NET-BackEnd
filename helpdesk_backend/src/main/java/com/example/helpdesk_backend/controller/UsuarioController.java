@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
+import com.example.helpdesk_backend.dtos.request.SenhaAlterarMeDTO;
+import com.example.helpdesk_backend.dtos.request.SenhaRedefinirAdminDTO;
 import com.example.helpdesk_backend.dtos.request.UserCreateDTO;
 import com.example.helpdesk_backend.dtos.request.UsuarioUpdateDTO;
 import com.example.helpdesk_backend.dtos.response.UsuarioResponseDTO;
@@ -37,6 +38,23 @@ public class UsuarioController {
     public ResponseEntity<UsuarioResponseDTO> obterPerfilLogado(Authentication authentication) {
         String email = authentication.getName();
         return ResponseEntity.ok(usuarioService.obterPerfilLogado(email));
+    }
+
+    @PatchMapping("/me/senha")
+    public ResponseEntity<Void> alterarMinhaSenha(
+            @RequestBody @Valid SenhaAlterarMeDTO dto,
+            Authentication authentication) {
+        String emailLogado = authentication.getName();
+        usuarioService.alterarMinhaSenha(dto, emailLogado);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/senha")
+    public ResponseEntity<Void> redefinirSenhaPorAdmin(
+            @PathVariable Long id,
+            @RequestBody @Valid SenhaRedefinirAdminDTO dto) {
+        usuarioService.redefinirSenhaPorAdmin(id, dto);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping
