@@ -2,8 +2,11 @@ package com.example.helpdesk_backend.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.example.helpdesk_backend.dtos.request.SenhaAlterarMeDTO;
+import com.example.helpdesk_backend.dtos.request.SenhaRedefinirAdminDTO;
 import com.example.helpdesk_backend.dtos.request.UsuarioUpdateDTO;
 import com.example.helpdesk_backend.dtos.response.UsuarioResponseDTO;
 import com.example.helpdesk_backend.exception.BusinessException;
@@ -20,6 +23,8 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
 
     private final ChamadoRepository chamadoRepository;
+
+    private final PasswordEncoder passwordEncoder;
 
 
     public UsuarioResponseDTO obterPerfilLogado(String email) {
@@ -68,6 +73,30 @@ public class UsuarioService {
         }
 
         usuarioRepository.delete(usuario);
+    }
+
+    @Transactional
+    public void alterarMinhaSenha(SenhaAlterarMeDTO dto, String emailUsuarioLogado){
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuarioLogado).orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
+
+        if (!passwordEncoder.matches(dto.senhaAtual(), usuario.getSenha())) {
+            throw new BusinessException("A senha atual informada está incorreta.");
+        }
+
+        if (passwordEncoder.matches(dto.novaSenha(), usuario.getSenha())) {
+          throw new BusinessException("A nova senha deve ser diferente da senha atual.");  
+        }
+
+        usuario.setSenha(passwordEncoder.encode(dto.novaSenha()));
+        usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public void redefinirSenhaPorAdmin(Long usuarioId, SenhaRedefinirAdminDTO dto){
+        Usuario usuario = usuarioRepository.findById(usuarioId).orElseThrow(() -> new BusinessException("Usuário não encontrado."));
+
+        usuario.setSenha(passwordEncoder.encode(dto.novaSenha()));
+        usuarioRepository.save(usuario);
     }
 
     /**
