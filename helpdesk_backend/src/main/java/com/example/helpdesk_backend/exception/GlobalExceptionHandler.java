@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
@@ -14,8 +15,12 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     /**
@@ -63,8 +68,39 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(err);
     }
 
+    /**
+     * Rota inexistente. Sem este handler o NoResourceFoundException caia no catch-all
+     * de Exception e virava 500 -- o cliente nao conseguia distinguir "essa rota nao
+     * existe" de "o servidor quebrou".
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<StandardError> handleNotFound(NoResourceFoundException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
+        StandardError err = new StandardError(
+                LocalDateTime.now(), status.value(),
+                "Recurso não encontrado.", request.getRequestURI());
+        return ResponseEntity.status(status).body(err);
+    }
+
+    /**
+     * Negativa vinda do Spring Security (@PreAuthorize e afins). Tambem caia no catch-all
+     * e virava 500 -- armadilha com @EnableMethodSecurity ligado.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<StandardError> handleAccessDenied(AccessDeniedException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.FORBIDDEN;
+        StandardError err = new StandardError(
+                LocalDateTime.now(), status.value(),
+                "Seu perfil não tem permissão para acessar este recurso.", request.getRequestURI());
+        return ResponseEntity.status(status).body(err);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<StandardError> handleGenericException(Exception e, HttpServletRequest request) {
+        // O catch-all descartava a causa raiz sem registro: um 500 em producao nao
+        // deixava rastro para diagnostico.
+        log.error("Erro nao tratado em {}: {}", request.getRequestURI(), e.getMessage(), e);
+
         StandardError error = new StandardError(
                 LocalDateTime.now(),
 
