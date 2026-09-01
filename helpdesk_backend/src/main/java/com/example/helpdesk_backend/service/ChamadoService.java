@@ -20,7 +20,7 @@ import com.example.helpdesk_backend.model.Equipamento;
 import com.example.helpdesk_backend.model.EscalonamentoLog;
 import com.example.helpdesk_backend.model.Usuario;
 import com.example.helpdesk_backend.model.enums.Categoria;
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.model.enums.StatusChamado;
 import com.example.helpdesk_backend.model.enums.Urgencia;
@@ -71,7 +71,7 @@ public class ChamadoService {
         }
 
         chamado.setStatus(StatusChamado.ABERTO);
-        chamado.setNivelExigido(NivelAntendente.NIVEL_I);
+        chamado.setNivelExigido(NivelAtendente.NIVEL_I);
         chamado.setDataAbertura(LocalDateTime.now());
         chamado.setProtocolo(gerarProtocolo());
         chamado.setDescricao(dto.descricao());

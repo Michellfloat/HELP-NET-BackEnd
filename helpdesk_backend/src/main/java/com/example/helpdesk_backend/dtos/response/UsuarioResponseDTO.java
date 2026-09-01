@@ -1,6 +1,6 @@
 package com.example.helpdesk_backend.dtos.response;
 
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.model.enums.Setor;
 
@@ -12,7 +12,7 @@ public record UsuarioResponseDTO(
     String cargo,
     Setor setor,
     Perfil perfil,
-    NivelAntendente nivelAntendente,
+    NivelAtendente nivelAntendente,
     Boolean cadastroCompleto
 ) {
 

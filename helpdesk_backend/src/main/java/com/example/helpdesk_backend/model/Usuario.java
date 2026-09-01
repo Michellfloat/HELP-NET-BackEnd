@@ -1,6 +1,6 @@
 package com.example.helpdesk_backend.model;
 
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 
 import com.example.helpdesk_backend.model.enums.Setor;
@@ -46,7 +46,7 @@ public class Usuario {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = true)
-    private NivelAntendente nivelAntendente; //Campo oculto para usuários com perfil USUARIO, mas obrigatório para usuários com perfil ATENDENTE.
+    private NivelAtendente nivelAntendente; //Campo oculto para usuários com perfil USUARIO, mas obrigatório para usuários com perfil ATENDENTE.
 
     @Column(nullable = false)
     private Boolean cadastroCompleto; // Flag para o RF02/RN03

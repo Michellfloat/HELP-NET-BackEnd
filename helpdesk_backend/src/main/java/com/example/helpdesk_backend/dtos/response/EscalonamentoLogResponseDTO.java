@@ -2,7 +2,7 @@ package com.example.helpdesk_backend.dtos.response;
 
 import java.time.LocalDateTime;
 
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.NivelAtendente;
 
 public record EscalonamentoLogResponseDTO(
     Long id,
@@ -10,8 +10,8 @@ public record EscalonamentoLogResponseDTO(
     String protocoloChamado,
     String nomeAtendente,
     String emailAtendente,
-    NivelAntendente nivelAntendente,
-    NivelAntendente novoNivel,
+    NivelAtendente nivelAntendente,
+    NivelAtendente novoNivel,
     String justificativa,
     LocalDateTime dataEscalonamento
 ) {

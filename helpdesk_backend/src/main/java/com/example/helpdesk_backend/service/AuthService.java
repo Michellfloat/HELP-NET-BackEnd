@@ -10,7 +10,7 @@ import com.example.helpdesk_backend.dtos.request.UserCreateDTO;
 import com.example.helpdesk_backend.dtos.response.LoginResponseDTO;
 import com.example.helpdesk_backend.exception.BusinessException;
 import com.example.helpdesk_backend.model.Usuario;
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
 import com.example.helpdesk_backend.security.JwtService;
@@ -78,7 +78,7 @@ public class AuthService {
         return new LoginResponseDTO(token, usuario.getEmail(), usuario.getPerfil().name());
     }
 
-    public void validarPrivilegioAtendente(Usuario usuario, NivelAntendente nivelMinimoRequerido){
+    public void validarPrivilegioAtendente(Usuario usuario, NivelAtendente nivelMinimoRequerido){
         if (usuario.getPerfil() == Perfil.ADMIN) {
             return;
         }
