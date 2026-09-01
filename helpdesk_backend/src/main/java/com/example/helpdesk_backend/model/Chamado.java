@@ -69,10 +69,9 @@ public class Chamado {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String descricao;
 
-    // VÍNCULO COM A NOVA ENTIDADE
     @ManyToOne
     @JoinColumn(name = "equipamento_id")
-    private Equipamento equipamento; 
+    private Equipamento equipamento;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "setor_responsavel", length = 30)
@@ -86,4 +85,10 @@ public class Chamado {
 
     @Column(name = "comentario_avaliacao", columnDefinition = "TEXT")
     private String comentarioAvaliacao;
+
+    @Column(name = "descricao_resolucao", columnDefinition = "TEXT")
+    private String descricaoResolucao;
+
+    @Column(name = "justificativa_reabertura", columnDefinition = "TEXT")
+    private String justificativaReabertura;
 }

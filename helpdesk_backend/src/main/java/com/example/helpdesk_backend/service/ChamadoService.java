@@ -11,6 +11,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.helpdesk_backend.dtos.request.ChamadoStatusRequestDTO;
 import com.example.helpdesk_backend.dtos.request.ChamadoAvaliarDTO;
 import com.example.helpdesk_backend.dtos.request.ChamadoCreateDTO;
 import com.example.helpdesk_backend.dtos.request.EscalonarChamadoDTO;
@@ -41,7 +42,7 @@ public class ChamadoService {
     private final ChamadoRepository chamadoRepository;
     private final UsuarioRepository usuarioRepository;
     private final EscalonamentoLogRepository escalonamentoLogRepository;
-    private final EquipamentoRepository equipamentoRepository; // Injetado para validar o equipamento
+    private final EquipamentoRepository equipamentoRepository;
 
     @Transactional
     public ChamadoResponseDTO criarChamado(ChamadoCreateDTO dto, String emailUsuarioLogado) {
@@ -61,12 +62,10 @@ public class ChamadoService {
             }
         }
 
-
         Chamado chamado = new Chamado();
         chamado.setSolicitante(solicitante);
         chamado.setCategoria(dto.categoria());
 
-        // Validação condicional da Urgência
         if (dto.categoria() == Categoria.OUTROS) {
             if (dto.urgencia() == null) {
                 throw new BusinessException("Para a categoria OUTROS a urgência é obrigatória.");
@@ -84,7 +83,6 @@ public class ChamadoService {
         chamado.setProtocolo(gerarProtocolo());
         chamado.setDescricao(dto.descricao());
 
-        // Vinculação e validação do Equipamento
         if (dto.equipamentoId() != null) {
             Equipamento equipamento = equipamentoRepository.findById(dto.equipamentoId())
                     .orElseThrow(() -> new BusinessException("Equipamento informado não encontrado."));
@@ -96,7 +94,7 @@ public class ChamadoService {
         } else {
             chamado.setEquipamento(null);
         }
-        
+
         chamado.setPrazoLimite(calcularPrazoSla(chamado.getUrgencia(), chamado.getDataAbertura()));
 
         Chamado chamadoSalvo = chamadoRepository.save(chamado);
@@ -114,14 +112,14 @@ public class ChamadoService {
     }
 
     public Page<ChamadoResponseDTO> listarChamados(
-        StatusChamado status,
-        Urgencia urgencia,
-        Setor setor,
-        NivelAtendente nivelExigido,
-        Long solicitanteId,
-        Long responsavelId,
-        String emailUsuarioLogado,
-        Pageable pageable
+            StatusChamado status,
+            Urgencia urgencia,
+            Setor setor,
+            NivelAtendente nivelExigido,
+            Long solicitanteId,
+            Long responsavelId,
+            String emailUsuarioLogado,
+            Pageable pageable
     ){
         Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado).orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
 
@@ -166,7 +164,7 @@ public class ChamadoService {
 
         if (usuario.getPerfil() == Perfil.USUARIO) {
             if (!chamado.getSolicitante().getId().equals(usuario.getId())) {
-              throw new BusinessException("Acesso negado: Você só pode acessar seus próprios chamados.");  
+                throw new BusinessException("Acesso negado: Você só pode acessar seus próprios chamados.");
             }
             return;
         }
@@ -247,17 +245,40 @@ public class ChamadoService {
     }
 
     @Transactional
-    public ChamadoResponseDTO alterarStatus(Long id, StatusChamado novoStatus){
-        Chamado chamado = chamadoRepository.findById(id).orElseThrow(() -> new BusinessException("Chamado não encontrado."));
+    public ChamadoResponseDTO alterarStatus(Long id, ChamadoStatusRequestDTO dto, String emailUsuario) {
+        Chamado chamado = chamadoRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Chamado não encontrado."));
 
-        chamado.setStatus(novoStatus);
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
 
-        if (novoStatus == StatusChamado.RESOLVIDO || novoStatus == StatusChamado.FECHADO) {
+        StatusChamado statusAtual = chamado.getStatus();
+        StatusChamado novoStatus = dto.status();
+
+        boolean isTentandoFechar = (novoStatus == StatusChamado.RESOLVIDO || novoStatus == StatusChamado.FECHADO);
+        boolean estavaFechado = (statusAtual == StatusChamado.RESOLVIDO || statusAtual == StatusChamado.FECHADO);
+        boolean isReabertura = estavaFechado && (novoStatus == StatusChamado.ABERTO || novoStatus == StatusChamado.EM_ANDAMENTO);
+
+        // Regra 1: Fechamento exige resolução e marca o usuário logado como responsável
+        if (isTentandoFechar && !estavaFechado) {
+            if (dto.descricaoResolucao() == null || dto.descricaoResolucao().isBlank()) {
+                throw new BusinessException("A descrição da resolução é obrigatória para finalizar o chamado.");
+            }
+            chamado.setDescricaoResolucao(dto.descricaoResolucao());
             chamado.setDataFechamento(LocalDateTime.now());
-        }else{
+            chamado.setResponsavel(usuarioLogado); // Quem fechou assina
+        }
+
+        // Regra 2: Reabertura exige justificativa
+        if (isReabertura) {
+            if (dto.justificativaReabertura() == null || dto.justificativaReabertura().isBlank()) {
+                throw new BusinessException("É obrigatório fornecer uma justificativa para reabrir um chamado finalizado.");
+            }
+            chamado.setJustificativaReabertura(dto.justificativaReabertura());
             chamado.setDataFechamento(null);
         }
 
+        chamado.setStatus(novoStatus);
         return converterParaResponseDTO(chamadoRepository.save(chamado));
     }
 
@@ -280,9 +301,8 @@ public class ChamadoService {
     }
 
     private ChamadoResponseDTO converterParaResponseDTO(Chamado chamado) {
-        String nomeResponsavel = (chamado.getResponsavel() != null)
-                ? chamado.getResponsavel().getNome()
-                : "Não atribuído";
+        String nomeResponsavel = (chamado.getResponsavel() != null) ? chamado.getResponsavel().getNome() : "Não atribuído";
+        NivelAtendente nivelResponsavel = (chamado.getResponsavel() != null) ? chamado.getResponsavel().getNivelAntendente() : null;
 
         Long equipId = chamado.getEquipamento() != null ? chamado.getEquipamento().getId() : null;
         String equipNome = chamado.getEquipamento() != null ? chamado.getEquipamento().getNome() : null;
@@ -295,6 +315,7 @@ public class ChamadoService {
                 chamado.getSolicitante().getEmail(),
                 chamado.getResponsavel() != null ? chamado.getResponsavel().getId() : null,
                 nomeResponsavel,
+                nivelResponsavel,
                 chamado.getCategoria(),
                 chamado.getUrgencia(),
                 chamado.getStatus(),
@@ -302,6 +323,8 @@ public class ChamadoService {
                 chamado.getDataAbertura(),
                 chamado.getDataFechamento(),
                 chamado.getDescricao(),
+                chamado.getDescricaoResolucao(),
+                chamado.getJustificativaReabertura(),
                 equipId,
                 equipNome,
                 chamado.getSetor(),

@@ -11,6 +11,7 @@ public record ChamadoResponseDTO(
         String solicitanteEmail,
         Long responsavelId,
         String responsavelNome,
+        NivelAtendente responsavelNivel,
         Categoria categoria,
         Urgencia urgencia,
         StatusChamado status,
@@ -18,12 +19,13 @@ public record ChamadoResponseDTO(
         LocalDateTime dataAbertura,
         LocalDateTime dataFechamento,
         String descricao,
-        
-        // --- NOVOS CAMPOS DO EQUIPAMENTO ---
+
+        String descricaoResolucao,
+        String justificativaReabertura,
+
         Long equipamentoId,
-        String equipamentoNome, 
-        // -----------------------------------
-        
+        String equipamentoNome,
+
         Setor setor,
         LocalDateTime prazoLimite,
         Integer notaAvaliacao,
