@@ -92,6 +92,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/chamados/*/status").hasAnyRole("ADMIN", "ATENDENTE")
                         .requestMatchers(HttpMethod.PATCH, "/chamados/*/avaliar").authenticated()
 
+                        // Gestão de Mensagens do Mini Chat
+                        .requestMatchers(HttpMethod.GET, "/chamados/*/mensagens").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/chamados/*/mensagens").authenticated()
+
                         // Gestão de Anexos
                         .requestMatchers(HttpMethod.POST, "/chamados/*/anexos").authenticated()
                         .requestMatchers(HttpMethod.GET, "/chamados/*/anexos").authenticated()
