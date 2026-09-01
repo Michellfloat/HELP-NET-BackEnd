@@ -65,8 +65,10 @@ public class ChamadoController {
     }
 
     @GetMapping("/fila")
-    public ResponseEntity<Page<ChamadoResponseDTO>> listarFilaChamados(Pageable pageable) {
-        return ResponseEntity.ok(chamadoService.listarFilaChamados(pageable));
+    public ResponseEntity<Page<ChamadoResponseDTO>> listarFilaChamados(
+            Pageable pageable,
+            Authentication authentication) {
+        return ResponseEntity.ok(chamadoService.listarFilaChamados(authentication.getName(), pageable));
     }
 
     @PostMapping("/{id}/escalonar")
