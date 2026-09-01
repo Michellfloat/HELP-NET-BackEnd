@@ -178,9 +178,22 @@ public class ChamadoService {
         }
     }
 
-    public Page<ChamadoResponseDTO> listarFilaChamados(Pageable pageable) {
-        return chamadoRepository.findAll(pageable)
-                .map(this::converterParaResponseDTO);
+    /**
+     * Fila de atendimento.
+     *
+     * Antes fazia findAll() puro, sem a regra de visibilidade por nivel que ja e aplicada
+     * em listarChamados e buscarPorId. Na pratica um atendente NIVEL_I listava chamados
+     * NIVEL_III por esta rota, contornando a hierarquia. Passa a reutilizar a mesma
+     * Specification, com os filtros opcionais nulos.
+     */
+    public Page<ChamadoResponseDTO> listarFilaChamados(String emailUsuarioLogado, Pageable pageable) {
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado)
+                .orElseThrow(() -> new BusinessException("Usuário logado não encontrado."));
+
+        Specification<Chamado> spec = ChamadoSpecification.comFiltrosEVisibilisade(
+                null, null, null, null, null, null, usuarioLogado);
+
+        return chamadoRepository.findAll(spec, pageable).map(this::converterParaResponseDTO);
     }
 
     private Usuario determinarSolicitante(ChamadoCreateDTO dto, Usuario usuarioLogado) {
