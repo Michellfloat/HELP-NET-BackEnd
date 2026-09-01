@@ -5,7 +5,7 @@ import com.example.helpdesk_backend.dtos.response.EquipamentoResponseDTO;
 import com.example.helpdesk_backend.exception.BusinessException;
 import com.example.helpdesk_backend.model.Equipamento;
 import com.example.helpdesk_backend.model.Usuario;
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.model.enums.Urgencia;
 import com.example.helpdesk_backend.repository.EquipamentoRepository;
@@ -28,7 +28,7 @@ public class EquipamentoService {
         Usuario usuario = buscarUsuarioLogado(emailUsuario);
         validarAcesso(usuario);
 
-        if (usuario.getPerfil() != Perfil.ADMIN && usuario.getNivelAntendente() == NivelAntendente.NIVEL_I) {
+        if (usuario.getPerfil() != Perfil.ADMIN && usuario.getNivelAntendente() == NivelAtendente.NIVEL_I) {
             throw new BusinessException("Atendentes Nível I não possuem permissão para cadastrar equipamentos.");
         }
 
@@ -64,7 +64,7 @@ public class EquipamentoService {
         Usuario usuario = buscarUsuarioLogado(emailUsuario);
         validarAcesso(usuario);
 
-        if (usuario.getPerfil() != Perfil.ADMIN && usuario.getNivelAntendente() == NivelAntendente.NIVEL_I) {
+        if (usuario.getPerfil() != Perfil.ADMIN && usuario.getNivelAntendente() == NivelAtendente.NIVEL_I) {
             throw new BusinessException("Atendentes Nível I não possuem permissão para excluir equipamentos.");
         }
 
@@ -93,13 +93,13 @@ public class EquipamentoService {
     }
 
     private void validarPermissaoHierarquica(Usuario usuario, Urgencia urgencia, String acao) {
-        if (usuario.getPerfil() == Perfil.ADMIN || usuario.getNivelAntendente() == NivelAntendente.NIVEL_III) return;
+        if (usuario.getPerfil() == Perfil.ADMIN || usuario.getNivelAntendente() == NivelAtendente.NIVEL_III) return;
 
-        if (usuario.getNivelAntendente() == NivelAntendente.NIVEL_I && urgencia != Urgencia.NORMAL) {
+        if (usuario.getNivelAntendente() == NivelAtendente.NIVEL_I && urgencia != Urgencia.NORMAL) {
             throw new BusinessException("Atendentes Nível I só podem " + acao + " equipamentos de urgência NORMAL.");
         }
 
-        if (usuario.getNivelAntendente() == NivelAntendente.NIVEL_II && (urgencia == Urgencia.ALTA || urgencia == Urgencia.CRITICA)) {
+        if (usuario.getNivelAntendente() == NivelAtendente.NIVEL_II && (urgencia == Urgencia.ALTA || urgencia == Urgencia.CRITICA)) {
             throw new BusinessException("Atendentes Nível II só podem " + acao + " equipamentos de urgência NORMAL ou MEDIA.");
         }
     }

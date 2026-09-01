@@ -10,7 +10,7 @@ import com.example.helpdesk_backend.dtos.request.UserCreateDTO;
 import com.example.helpdesk_backend.dtos.response.LoginResponseDTO;
 import com.example.helpdesk_backend.exception.BusinessException;
 import com.example.helpdesk_backend.model.Usuario;
-import com.example.helpdesk_backend.model.enums.NivelAntendente;
+import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
 import com.example.helpdesk_backend.security.JwtService;
@@ -44,12 +44,13 @@ public class AuthService {
         novUsuario.setSenha(passwordEncoder.encode(userCreateDTO.senha()));
         novUsuario.setPerfil(userCreateDTO.perfil());
         novUsuario.setNivelAntendente(userCreateDTO.nivelAntendente());
-        novUsuario.setCadastroCompleto(false); // Inicialmente, o cadastro não está completo -> RN03:Trava de 1° acesso
+        novUsuario.setCargo(userCreateDTO.cargo()); //adicionado
+        novUsuario.setSetor(userCreateDTO.setor());  //adicionado
 
         return usuarioRepository.save(novUsuario);
     }
 
-    //Lógica para autenticcação
+    //Lógica para autenticação
 
     public LoginResponseDTO autenticarUsuario(LoginRequestDTO loginRequestDTO) {
 //--------------------------------------------------------------------------------        
@@ -75,16 +76,16 @@ public class AuthService {
 
 //---------------------------------------------------------------------------------
         //4°:Retorna a resposta completa
-        return new LoginResponseDTO(token, usuario.getEmail(), usuario.getPerfil().name());
+        return new LoginResponseDTO(usuario.getId(), token, usuario.getEmail(), usuario.getPerfil().name());
     }
 
-    public void validarPrivilegioAtendente(Usuario usuario, NivelAntendente nivelMinimoRequerido){
+    public void validarPrivilegioAtendente(Usuario usuario, NivelAtendente nivelMinimoRequerido){
         if (usuario.getPerfil() == Perfil.ADMIN) {
             return;
         }
 
         if (usuario.getPerfil() != Perfil.ATENDENTE) {
-            throw new BusinessException("Acesso negado: privilégio de atendente necessário.");
+            throw new BusinessException("Acesso negado: privilégio de atendente+ necessário.");
         }
 
         if (usuario.getNivelAntendente() == null || usuario.getNivelAntendente().ordinal() < nivelMinimoRequerido.ordinal()) {

@@ -58,7 +58,7 @@ public class Chamado {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = true)
-    private NivelAntendente nivelExigido;
+    private NivelAtendente nivelExigido;
 
     @Column(nullable = false)
     private LocalDateTime dataAbertura;
