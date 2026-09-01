@@ -32,6 +32,8 @@ public class EquipamentoService {
             throw new BusinessException("Atendentes Nível I não possuem permissão para cadastrar equipamentos.");
         }
 
+        validarPermissaoHierarquica(usuario, dto.urgencia(), "cadastrar");
+
         Equipamento equipamento = new Equipamento();
         equipamento.setPatrimonio(dto.patrimonio());
         equipamento.setNome(dto.nome());
@@ -47,8 +49,9 @@ public class EquipamentoService {
         Equipamento equipamento = buscarPorId(id);
         Usuario usuario = buscarUsuarioLogado(emailUsuario);
         validarAcesso(usuario);
-        
+
         validarPermissaoHierarquica(usuario, equipamento.getUrgencia(), "editar");
+        validarPermissaoHierarquica(usuario, dto.urgencia(), "atribuir esta urgência a");
 
         equipamento.setNome(dto.nome());
         equipamento.setMarca(dto.marca());
@@ -74,17 +77,15 @@ public class EquipamentoService {
     }
 
     public Page<EquipamentoResponseDTO> listarAtivos(String emailUsuario, Pageable pageable) {
-    Usuario usuario = buscarUsuarioLogado(emailUsuario);
+        Usuario usuario = buscarUsuarioLogado(emailUsuario);
 
-    // ADMIN e ATENDENTE visualizam todos os equipamentos ativos da empresa
-    if (usuario.getPerfil() == Perfil.ADMIN || usuario.getPerfil() == Perfil.ATENDENTE) {
-        return equipamentoRepository.findAllByAtivoTrue(pageable).map(this::converterParaDTO);
+        if (usuario.getPerfil() == Perfil.ADMIN || usuario.getPerfil() == Perfil.ATENDENTE) {
+            return equipamentoRepository.findAllByAtivoTrue(pageable).map(this::converterParaDTO);
+        }
+
+        return equipamentoRepository.findByAtivoTrueAndSetorLocalizado(usuario.getSetor(), pageable)
+                .map(this::converterParaDTO);
     }
-
-    // USUARIO comum visualiza apenas os equipamentos vinculados ao seu próprio setor
-    return equipamentoRepository.findByAtivoTrueAndSetorLocalizado(usuario.getSetor(), pageable)
-            .map(this::converterParaDTO);
-}
 
     private void validarAcesso(Usuario usuario) {
         if (usuario.getPerfil() == Perfil.USUARIO) {
@@ -94,6 +95,10 @@ public class EquipamentoService {
 
     private void validarPermissaoHierarquica(Usuario usuario, Urgencia urgencia, String acao) {
         if (usuario.getPerfil() == Perfil.ADMIN || usuario.getNivelAntendente() == NivelAtendente.NIVEL_III) return;
+
+        if (usuario.getNivelAntendente() == null) {
+            throw new BusinessException("Seu cadastro está sem nível de atendimento definido.");
+        }
 
         if (usuario.getNivelAntendente() == NivelAtendente.NIVEL_I && urgencia != Urgencia.NORMAL) {
             throw new BusinessException("Atendentes Nível I só podem " + acao + " equipamentos de urgência NORMAL.");
