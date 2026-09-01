@@ -8,6 +8,7 @@ public record ChamadoResponseDTO(
         String protocolo,
         Long solicitanteId,
         String solicitanteNome,
+        String solicitanteEmail,
         Long responsavelId,
         String responsavelNome,
         Categoria categoria,

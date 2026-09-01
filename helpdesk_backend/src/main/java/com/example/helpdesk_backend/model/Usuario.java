@@ -48,9 +48,6 @@ public class Usuario {
     @Column(nullable = true)
     private NivelAtendente nivelAntendente; //Campo oculto para usuários com perfil USUARIO, mas obrigatório para usuários com perfil ATENDENTE.
 
-    @Column(nullable = false)
-    private Boolean cadastroCompleto; // Flag para o RF02/RN03
-
     @Enumerated(EnumType.STRING)
     @Column(name = "setor", length = 30)
     private Setor setor;

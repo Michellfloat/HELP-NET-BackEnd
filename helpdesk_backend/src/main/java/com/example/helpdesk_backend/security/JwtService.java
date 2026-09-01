@@ -11,11 +11,14 @@ import org.springframework.stereotype.Service;
 import com.example.helpdesk_backend.model.Usuario;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 
 
-
+@Slf4j
 @Service
 public class JwtService {
 
@@ -33,6 +36,7 @@ public class JwtService {
     public String gerarToken(Usuario usuario){
         return Jwts.builder()
         .subject(usuario.getEmail())
+        .claim("id", usuario.getId())
         .claim("nome", usuario.getNome())
         .claim("perfil", usuario.getPerfil().name())
         .issuedAt(new Date(System.currentTimeMillis()))
@@ -50,8 +54,15 @@ public class JwtService {
             .getPayload();
 
             return claims.getSubject(); //Irá retornar o E-mail
-        } catch (Exception e){
-            return null; //Token inválido ou inspirado
+        } catch (ExpiredJwtException e){
+            //Agora: Se espera que o usuário só precise entrar de novo.
+            log.debug("Token expirado para {}", e.getClaims().getSubject());
+            return null; //Token inválido/expirado
+        } catch (JwtException e){
+            //Inesperado: Assinatura, formato ou chave Token
+            log.warn("Token Rejeitado: {}",e.getMessage());
+
+            return null;//Token inválido/rejeitado
         }
         
     }

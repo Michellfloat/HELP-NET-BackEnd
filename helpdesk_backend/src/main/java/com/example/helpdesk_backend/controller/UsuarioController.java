@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.helpdesk_backend.dtos.request.ComplementarPerfilDTO;
+
 import com.example.helpdesk_backend.dtos.request.UserCreateDTO;
 import com.example.helpdesk_backend.dtos.request.UsuarioUpdateDTO;
 import com.example.helpdesk_backend.dtos.response.UsuarioResponseDTO;
@@ -33,21 +33,10 @@ public class UsuarioController {
 
     private final AuthService authService;
 
-    @PatchMapping("/complementar-perfil") //TODO: Inserir no controller a opção de complementar o perfil via ID
-    public ResponseEntity<UsuarioResponseDTO> completarPerfil(@RequestBody @Valid ComplementarPerfilDTO dto,
-            Authentication authentication) {
-        // Extrair o email do usuário autenticado
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioResponseDTO> obterPerfilLogado(Authentication authentication) {
         String email = authentication.getName();
-
-        return ResponseEntity.ok(usuarioService.completarPerfil(email, dto));
-    }
-
-    @PatchMapping("/{id}/complementar-perfil")
-    public ResponseEntity<UsuarioResponseDTO>complementarPerfilPorId(
-        @PathVariable Long id,
-        @RequestBody @Valid ComplementarPerfilDTO dto
-    ){
-        return ResponseEntity.ok(usuarioService.complementarPerfilPorId(id, dto));
+        return ResponseEntity.ok(usuarioService.obterPerfilLogado(email));
     }
 
     @GetMapping
