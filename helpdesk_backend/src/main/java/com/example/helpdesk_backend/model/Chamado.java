@@ -91,4 +91,21 @@ public class Chamado {
 
     @Column(name = "justificativa_reabertura", columnDefinition = "TEXT")
     private String justificativaReabertura;
+
+    /**
+     * Instante em que o atendimento foi pausado, ou null quando o chamado nao esta
+     * pausado. E o marco a partir do qual o tempo parado e medido na retomada.
+     */
+    @Column(name = "pausado_em")
+    private LocalDateTime pausadoEm;
+
+    /**
+     * Soma de todo o tempo que o chamado ja passou pausado, em segundos.
+     *
+     * O prazoLimite ja e empurrado para frente a cada retomada, entao este campo nao
+     * participa do calculo do SLA -- ele existe para a tela poder dizer quanto do
+     * atendimento foi espera, que e um dado de operacao diferente de "esta atrasado".
+     */
+    @Column(name = "tempo_pausado_segundos", nullable = false, columnDefinition = "BIGINT NOT NULL DEFAULT 0")
+    private Long tempoPausadoSegundos = 0L;
 }

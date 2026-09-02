@@ -96,6 +96,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/chamados/*/mensagens").authenticated()
                         .requestMatchers(HttpMethod.POST, "/chamados/*/mensagens").authenticated()
 
+                        // Trilha de histórico do atendimento.
+                        // A leitura é de qualquer autenticado porque o solicitante acompanha o
+                        // próprio chamado; quem realmente filtra é o serviço, pela mesma regra de
+                        // alcance do chamado. Já a escrita é do suporte: a trilha registra o
+                        // ATENDIMENTO, e o solicitante fala pela conversa do chamado.
+                        .requestMatchers(HttpMethod.GET, "/chamados/*/historico").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/chamados/*/historico").hasAnyRole("ADMIN", "ATENDENTE")
+
                         // Gestão de Anexos
                         .requestMatchers(HttpMethod.POST, "/chamados/*/anexos").authenticated()
                         .requestMatchers(HttpMethod.GET, "/chamados/*/anexos").authenticated()

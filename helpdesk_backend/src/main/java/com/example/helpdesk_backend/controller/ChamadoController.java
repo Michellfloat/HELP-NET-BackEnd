@@ -2,14 +2,19 @@ package com.example.helpdesk_backend.controller;
 
 import com.example.helpdesk_backend.dtos.request.ChamadoStatusRequestDTO;
 import com.example.helpdesk_backend.dtos.request.EscalonarChamadoDTO;
+import com.example.helpdesk_backend.dtos.request.HistoricoCreateDTO;
 import com.example.helpdesk_backend.dtos.request.ChamadoAvaliarDTO;
 import com.example.helpdesk_backend.dtos.request.ChamadoCreateDTO;
 import com.example.helpdesk_backend.dtos.response.ChamadoResponseDTO;
+import com.example.helpdesk_backend.dtos.response.HistoricoChamadoResponseDTO;
 import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Setor;
 import com.example.helpdesk_backend.model.enums.StatusChamado;
 import com.example.helpdesk_backend.model.enums.Urgencia;
 import com.example.helpdesk_backend.service.ChamadoService;
+import com.example.helpdesk_backend.service.HistoricoChamadoService;
+
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class ChamadoController {
 
     private final ChamadoService chamadoService;
+    private final HistoricoChamadoService historicoChamadoService;
 
     @PostMapping
     public ResponseEntity<ChamadoResponseDTO> criarChamado(
@@ -105,5 +111,34 @@ public class ChamadoController {
             Authentication authentication) {
         String emailSolicitante = authentication.getName();
         return ResponseEntity.ok(chamadoService.avaliarChamado(id, dto, emailSolicitante));
+    }
+
+    /**
+     * Trilha do atendimento, em ordem cronologica.
+     *
+     * Nao existe PUT nem DELETE aqui de proposito: o valor da trilha esta em provar o que
+     * aconteceu, entao evento gravado nao e editado nem removido.
+     */
+    @GetMapping("/{id}/historico")
+    public ResponseEntity<List<HistoricoChamadoResponseDTO>> listarHistorico(
+            @PathVariable Long id,
+            Authentication authentication) {
+        return ResponseEntity.ok(historicoChamadoService.listar(id, authentication.getName()));
+    }
+
+    /**
+     * Anotacao avulsa: registra o que foi feito sem mexer no status do chamado. Os demais
+     * eventos o servidor grava sozinho, junto da acao que os originou.
+     */
+    @PostMapping("/{id}/historico")
+    public ResponseEntity<HistoricoChamadoResponseDTO> registrarHistorico(
+            @PathVariable Long id,
+            @RequestBody @Valid HistoricoCreateDTO dto,
+            Authentication authentication) {
+
+        HistoricoChamadoResponseDTO response =
+                historicoChamadoService.registrarAnotacao(id, dto, authentication.getName());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
