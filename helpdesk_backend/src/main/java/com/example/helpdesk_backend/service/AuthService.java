@@ -43,7 +43,7 @@ public class AuthService {
         novUsuario.setEmail(userCreateDTO.email());
         novUsuario.setSenha(passwordEncoder.encode(userCreateDTO.senha()));
         novUsuario.setPerfil(userCreateDTO.perfil());
-        novUsuario.setNivelAntendente(userCreateDTO.nivelAntendente());
+        novUsuario.setNivelAtendente(userCreateDTO.nivelAntendente());
         novUsuario.setCargo(userCreateDTO.cargo()); //adicionado
         novUsuario.setSetor(userCreateDTO.setor());  //adicionado
 
@@ -88,7 +88,7 @@ public class AuthService {
             throw new BusinessException("Acesso negado: privilégio de atendente+ necessário.");
         }
 
-        if (usuario.getNivelAntendente() == null || usuario.getNivelAntendente().ordinal() < nivelMinimoRequerido.ordinal()) {
+        if (usuario.getNivelAtendente() == null || usuario.getNivelAtendente().ordinal() < nivelMinimoRequerido.ordinal()) {
             throw new BusinessException("Nível de acesso insuficiente. Necessário nível: " + nivelMinimoRequerido);
         }
     }

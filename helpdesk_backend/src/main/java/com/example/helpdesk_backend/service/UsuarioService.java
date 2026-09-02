@@ -56,7 +56,7 @@ public class UsuarioService {
         usuario.setEmail(dto.email());
 
         if (usuario.getPerfil().name().equals("ATENDENTE") && dto.nivelAntendente() != null) {
-            usuario.setNivelAntendente(dto.nivelAntendente());
+            usuario.setNivelAtendente(dto.nivelAntendente());
         }
         Usuario usuarioAtualizado = usuarioRepository.save(usuario);
         return converterParaResponseDTO(usuarioAtualizado);
@@ -110,7 +110,7 @@ public class UsuarioService {
                 usuario.getCargo(),
                 usuario.getSetor(),
                 usuario.getPerfil(),
-                usuario.getNivelAntendente()
+                usuario.getNivelAtendente()
             );
     }
 

@@ -109,7 +109,7 @@ public class HistoricoChamadoService {
                 autor.getNome(),
                 autor.getEmail(),
                 autor.getPerfil(),
-                autor.getNivelAntendente(),
+                autor.getNivelAtendente(),
                 evento.getTipo(),
                 evento.getTipo().getDescricao(),
                 evento.getDescricao(),

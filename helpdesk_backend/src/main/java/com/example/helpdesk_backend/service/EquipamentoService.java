@@ -28,7 +28,7 @@ public class EquipamentoService {
         Usuario usuario = buscarUsuarioLogado(emailUsuario);
         validarAcesso(usuario);
 
-        if (usuario.getPerfil() != Perfil.ADMIN && usuario.getNivelAntendente() == NivelAtendente.NIVEL_I) {
+        if (usuario.getPerfil() != Perfil.ADMIN && usuario.getNivelAtendente() == NivelAtendente.NIVEL_I) {
             throw new BusinessException("Atendentes Nível I não possuem permissão para cadastrar equipamentos.");
         }
 
@@ -67,7 +67,7 @@ public class EquipamentoService {
         Usuario usuario = buscarUsuarioLogado(emailUsuario);
         validarAcesso(usuario);
 
-        if (usuario.getPerfil() != Perfil.ADMIN && usuario.getNivelAntendente() == NivelAtendente.NIVEL_I) {
+        if (usuario.getPerfil() != Perfil.ADMIN && usuario.getNivelAtendente() == NivelAtendente.NIVEL_I) {
             throw new BusinessException("Atendentes Nível I não possuem permissão para excluir equipamentos.");
         }
 
@@ -94,17 +94,17 @@ public class EquipamentoService {
     }
 
     private void validarPermissaoHierarquica(Usuario usuario, Urgencia urgencia, String acao) {
-        if (usuario.getPerfil() == Perfil.ADMIN || usuario.getNivelAntendente() == NivelAtendente.NIVEL_III) return;
+        if (usuario.getPerfil() == Perfil.ADMIN || usuario.getNivelAtendente() == NivelAtendente.NIVEL_III) return;
 
-        if (usuario.getNivelAntendente() == null) {
+        if (usuario.getNivelAtendente() == null) {
             throw new BusinessException("Seu cadastro está sem nível de atendimento definido.");
         }
 
-        if (usuario.getNivelAntendente() == NivelAtendente.NIVEL_I && urgencia != Urgencia.NORMAL) {
+        if (usuario.getNivelAtendente() == NivelAtendente.NIVEL_I && urgencia != Urgencia.NORMAL) {
             throw new BusinessException("Atendentes Nível I só podem " + acao + " equipamentos de urgência NORMAL.");
         }
 
-        if (usuario.getNivelAntendente() == NivelAtendente.NIVEL_II && (urgencia == Urgencia.ALTA || urgencia == Urgencia.CRITICA)) {
+        if (usuario.getNivelAtendente() == NivelAtendente.NIVEL_II && (urgencia == Urgencia.ALTA || urgencia == Urgencia.CRITICA)) {
             throw new BusinessException("Atendentes Nível II só podem " + acao + " equipamentos de urgência NORMAL ou MEDIA.");
         }
     }
