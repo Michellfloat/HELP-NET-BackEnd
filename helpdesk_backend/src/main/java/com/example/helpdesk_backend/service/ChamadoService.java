@@ -3,6 +3,7 @@ package com.example.helpdesk_backend.service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,6 +57,19 @@ public class ChamadoService {
      */
     private final HistoricoChamadoRepository historicoChamadoRepository;
 
+    /**
+     * Estados que ocupam uma das tres vagas do solicitante: todos os que nao encerram o
+     * chamado.
+     *
+     * Antes a lista era ABERTO e EM_ANDAMENTO escritos a mao, e por isso um chamado
+     * ESCALONADO nao ocupava vaga nenhuma -- bastava o atendimento subir de nivel para o
+     * limite deixar de valer. Derivar do enum tira a lista da memoria de quem edita:
+     * status novo entra na conta sozinho.
+     */
+    private static final List<StatusChamado> STATUS_ATIVOS = Arrays.stream(StatusChamado.values())
+            .filter(status -> !status.isEncerrado())
+            .toList();
+
     @Transactional
     public ChamadoResponseDTO criarChamado(ChamadoCreateDTO dto, String emailUsuarioLogado) {
         Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado)
@@ -64,10 +78,7 @@ public class ChamadoService {
         Usuario solicitante = determinarSolicitante(dto, usuarioLogado);
 
         if (solicitante.getPerfil() == Perfil.USUARIO) {
-            long chamadosAtivos = chamadoRepository.countBySolicitanteAndStatusIn(
-                    solicitante,
-                    List.of(StatusChamado.ABERTO, StatusChamado.EM_ANDAMENTO)
-            );
+            long chamadosAtivos = chamadoRepository.countBySolicitanteAndStatusIn(solicitante, STATUS_ATIVOS);
 
             if (chamadosAtivos >= 3) {
                 throw new BusinessException("O usuário atingiu o limite máximo de 3 chamados ativos simultaneamente.");
