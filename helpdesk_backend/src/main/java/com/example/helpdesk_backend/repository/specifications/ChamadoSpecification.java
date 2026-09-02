@@ -37,8 +37,8 @@ public class ChamadoSpecification {
             }else if (usuarioLogado.getPerfil() == Perfil.ATENDENTE) {
                 //Atendente só visualiza chamados cujo nível exigido seja <= ao seu nível de atendente.
 
-                if (usuarioLogado.getNivelAntendente() != null) {
-                    List<NivelAtendente> niveisPermitidos = Arrays.stream(NivelAtendente.values()).filter(n -> n.ordinal() <= usuarioLogado.getNivelAntendente().ordinal()).toList();
+                if (usuarioLogado.getNivelAtendente() != null) {
+                    List<NivelAtendente> niveisPermitidos = Arrays.stream(NivelAtendente.values()).filter(n -> n.ordinal() <= usuarioLogado.getNivelAtendente().ordinal()).toList();
 
                     predicates.add(root.get("nivelExigido").in(niveisPermitidos));
                 }else{

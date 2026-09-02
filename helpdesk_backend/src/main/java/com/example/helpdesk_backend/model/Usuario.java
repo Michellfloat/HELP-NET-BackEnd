@@ -46,7 +46,7 @@ public class Usuario {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = true)
-    private NivelAtendente nivelAntendente; //Campo oculto para usuários com perfil USUARIO, mas obrigatório para usuários com perfil ATENDENTE.
+    private NivelAtendente nivelAtendente; //Campo oculto para usuários com perfil USUARIO, mas obrigatório para usuários com perfil ATENDENTE.
 
     @Enumerated(EnumType.STRING)
     @Column(name = "setor", length = 30)

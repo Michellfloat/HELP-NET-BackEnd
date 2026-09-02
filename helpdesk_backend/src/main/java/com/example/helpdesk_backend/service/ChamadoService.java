@@ -210,8 +210,8 @@ public class ChamadoService {
         }
 
         if (usuario.getPerfil() == Perfil.ATENDENTE) {
-            if (usuario.getNivelAntendente() == null || usuario.getNivelAntendente().ordinal() < chamado.getNivelExigido().ordinal()) {
-                throw new BusinessException("Acesso negado: Seu nível de atendente (" + usuario.getNivelAntendente() + ") é inferior ao nível exigido pelo chamado (" +chamado.getNivelExigido() + ").");
+            if (usuario.getNivelAtendente() == null || usuario.getNivelAtendente().ordinal() < chamado.getNivelExigido().ordinal()) {
+                throw new BusinessException("Acesso negado: Seu nível de atendente (" + usuario.getNivelAtendente() + ") é inferior ao nível exigido pelo chamado (" +chamado.getNivelExigido() + ").");
             }
         }
     }
@@ -490,7 +490,7 @@ public class ChamadoService {
 
     private ChamadoResponseDTO converterParaResponseDTO(Chamado chamado) {
         String nomeResponsavel = (chamado.getResponsavel() != null) ? chamado.getResponsavel().getNome() : "Não atribuído";
-        NivelAtendente nivelResponsavel = (chamado.getResponsavel() != null) ? chamado.getResponsavel().getNivelAntendente() : null;
+        NivelAtendente nivelResponsavel = (chamado.getResponsavel() != null) ? chamado.getResponsavel().getNivelAtendente() : null;
         // Null quando nao ha responsavel, e nao a string "Nao atribuido" do nome: e-mail
         // ausente e ausencia de dado, nao um rotulo para a tela imprimir.
         String emailResponsavel = (chamado.getResponsavel() != null) ? chamado.getResponsavel().getEmail() : null;

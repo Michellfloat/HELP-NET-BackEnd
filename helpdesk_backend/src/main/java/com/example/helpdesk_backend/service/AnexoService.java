@@ -149,9 +149,9 @@ public class AnexoService {
             return;
         }
         if (usuario.getPerfil() == Perfil.ATENDENTE) {
-            if (usuario.getNivelAntendente() == null ||
-                usuario.getNivelAntendente().ordinal() < chamado.getNivelExigido().ordinal()) {
-                throw new BusinessException("Acesso negado: Seu nível de atendente (" + usuario.getNivelAntendente() + ") é inferior ao nível exigido pelo chamado (" + chamado.getNivelExigido() + ").");
+            if (usuario.getNivelAtendente() == null ||
+                usuario.getNivelAtendente().ordinal() < chamado.getNivelExigido().ordinal()) {
+                throw new BusinessException("Acesso negado: Seu nível de atendente (" + usuario.getNivelAtendente() + ") é inferior ao nível exigido pelo chamado (" + chamado.getNivelExigido() + ").");
             }
         }
     }
