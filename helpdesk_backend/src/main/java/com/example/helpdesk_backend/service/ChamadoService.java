@@ -1,5 +1,6 @@
 package com.example.helpdesk_backend.service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -20,16 +21,19 @@ import com.example.helpdesk_backend.exception.BusinessException;
 import com.example.helpdesk_backend.model.Chamado;
 import com.example.helpdesk_backend.model.Equipamento;
 import com.example.helpdesk_backend.model.EscalonamentoLog;
+import com.example.helpdesk_backend.model.HistoricoChamado;
 import com.example.helpdesk_backend.model.Usuario;
 import com.example.helpdesk_backend.model.enums.Categoria;
 import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.model.enums.Setor;
 import com.example.helpdesk_backend.model.enums.StatusChamado;
+import com.example.helpdesk_backend.model.enums.TipoEventoChamado;
 import com.example.helpdesk_backend.model.enums.Urgencia;
 import com.example.helpdesk_backend.repository.ChamadoRepository;
 import com.example.helpdesk_backend.repository.EquipamentoRepository;
 import com.example.helpdesk_backend.repository.EscalonamentoLogRepository;
+import com.example.helpdesk_backend.repository.HistoricoChamadoRepository;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
 import com.example.helpdesk_backend.repository.specifications.ChamadoSpecification;
 
@@ -43,6 +47,14 @@ public class ChamadoService {
     private final UsuarioRepository usuarioRepository;
     private final EscalonamentoLogRepository escalonamentoLogRepository;
     private final EquipamentoRepository equipamentoRepository;
+
+    /**
+     * A trilha e gravada aqui, pelo repositorio direto, e nao por um service proprio:
+     * cada evento precisa cair na MESMA transacao da acao que o originou, senao existe
+     * uma janela em que o chamado ja mudou e o registro ainda nao existe. E o mesmo
+     * arranjo que o escalonamentoLogRepository ja usa logo acima.
+     */
+    private final HistoricoChamadoRepository historicoChamadoRepository;
 
     @Transactional
     public ChamadoResponseDTO criarChamado(ChamadoCreateDTO dto, String emailUsuarioLogado) {
@@ -98,6 +110,12 @@ public class ChamadoService {
         chamado.setPrazoLimite(calcularPrazoSla(chamado.getUrgencia(), chamado.getDataAbertura()));
 
         Chamado chamadoSalvo = chamadoRepository.save(chamado);
+
+        // Abre a trilha. O autor e quem executou a acao, que nem sempre e o solicitante:
+        // atendente e admin podem abrir chamado em nome de terceiro.
+        registrarEvento(chamadoSalvo, usuarioLogado, TipoEventoChamado.ABERTURA, null,
+                null, chamadoSalvo.getStatus(), null, null);
+
         return converterParaResponseDTO(chamadoSalvo);
     }
 
@@ -150,10 +168,21 @@ public class ChamadoService {
 
         escalonamentoLogRepository.save(log);
 
+        StatusChamado statusAnterior = chamado.getStatus();
+        NivelAtendente nivelAnterior = chamado.getNivelExigido();
+
         chamado.setNivelExigido(dto.novoNivel());
         chamado.setStatus(StatusChamado.ESCALONADO);
 
         Chamado chamadoAtualizado = chamadoRepository.save(chamado);
+
+        // O EscalonamentoLog continua existindo para o relatorio de escalonamentos
+        // (RF13). O evento aqui e outra coisa: a mesma acao vista de dentro da historia
+        // do chamado, ao lado das pausas e das anotacoes.
+        registrarEvento(chamadoAtualizado, atendente, TipoEventoChamado.ESCALONAMENTO,
+                dto.justificativa(), statusAnterior, chamadoAtualizado.getStatus(),
+                nivelAnterior, chamadoAtualizado.getNivelExigido());
+
         return converterParaResponseDTO(chamadoAtualizado);
     }
 
@@ -225,12 +254,17 @@ public class ChamadoService {
             throw new BusinessException("Não é possível assumir um chamado já encerrado ou resolvido.");
         }
 
+        StatusChamado statusAnterior = chamado.getStatus();
+
         chamado.setResponsavel(atendente);
         if (chamado.getStatus() == StatusChamado.ABERTO) {
             chamado.setStatus(StatusChamado.EM_ANDAMENTO);
         }
 
         Chamado chamadoAtualizado = chamadoRepository.save(chamado);
+
+        registrarEvento(chamadoAtualizado, atendente, TipoEventoChamado.ATRIBUICAO, null,
+                statusAnterior, chamadoAtualizado.getStatus(), null, null);
 
         return converterParaResponseDTO(chamadoAtualizado);
     }
@@ -255,9 +289,11 @@ public class ChamadoService {
         StatusChamado statusAtual = chamado.getStatus();
         StatusChamado novoStatus = dto.status();
 
-        boolean isTentandoFechar = (novoStatus == StatusChamado.RESOLVIDO || novoStatus == StatusChamado.FECHADO);
-        boolean estavaFechado = (statusAtual == StatusChamado.RESOLVIDO || statusAtual == StatusChamado.FECHADO);
+        boolean isTentandoFechar = novoStatus.isEncerrado();
+        boolean estavaFechado = statusAtual.isEncerrado();
         boolean isReabertura = estavaFechado && (novoStatus == StatusChamado.ABERTO || novoStatus == StatusChamado.EM_ANDAMENTO);
+        boolean isPausa = (novoStatus == StatusChamado.PAUSADO && statusAtual != StatusChamado.PAUSADO);
+        boolean isRetomada = (statusAtual == StatusChamado.PAUSADO && novoStatus != StatusChamado.PAUSADO);
 
         // Regra 1: Fechamento exige resolução e marca o usuário logado como responsável
         if (isTentandoFechar && !estavaFechado) {
@@ -278,8 +314,104 @@ public class ChamadoService {
             chamado.setDataFechamento(null);
         }
 
+        // Regra 3: pausar exige um atendimento em curso, com dono e com motivo escrito.
+        // Sem o motivo a pausa vira um buraco na trilha: o chamado para e ninguem sabe
+        // esperando o que.
+        if (isPausa) {
+            if (chamado.getResponsavel() == null) {
+                throw new BusinessException("Só é possível pausar um chamado que já tenha um responsável.");
+            }
+            if (!statusAtual.isEmAtendimento()) {
+                throw new BusinessException("Só é possível pausar um chamado que esteja em atendimento.");
+            }
+            if (dto.observacao() == null || dto.observacao().isBlank()) {
+                throw new BusinessException("O motivo da pausa é obrigatório.");
+            }
+            chamado.setPausadoEm(LocalDateTime.now());
+        }
+
+        // Regra 4: sair da pausa devolve ao prazo o tempo que o chamado ficou parado.
+        if (isRetomada) {
+            encerrarPausa(chamado);
+        }
+
         chamado.setStatus(novoStatus);
-        return converterParaResponseDTO(chamadoRepository.save(chamado));
+        Chamado chamadoAtualizado = chamadoRepository.save(chamado);
+
+        registrarEvento(chamadoAtualizado, usuarioLogado,
+                tipoDaTransicao(statusAtual, novoStatus),
+                relatoDaTransicao(dto, isReabertura, isTentandoFechar && !estavaFechado),
+                statusAtual, novoStatus, null, null);
+
+        return converterParaResponseDTO(chamadoAtualizado);
+    }
+
+    /**
+     * Fecha a janela de pausa e devolve o tempo parado ao prazo.
+     *
+     * O SLA mede tempo de ATENDIMENTO, nao tempo de calendario. Se o chamado ficou seis
+     * horas esperando uma peca chegar, essas seis horas nao sao demora do suporte;
+     * empurrar o prazoLimite para frente pela mesma duracao e o que impede um chamado
+     * legitimamente parado de voltar da pausa ja aparecendo como atrasado.
+     */
+    private void encerrarPausa(Chamado chamado) {
+        if (chamado.getPausadoEm() == null) {
+            return;
+        }
+
+        // Clamp em zero: relogio do servidor ajustado para tras nao pode ENCURTAR o prazo.
+        long segundosParado = Math.max(0,
+                Duration.between(chamado.getPausadoEm(), LocalDateTime.now()).getSeconds());
+
+        if (chamado.getPrazoLimite() != null) {
+            chamado.setPrazoLimite(chamado.getPrazoLimite().plusSeconds(segundosParado));
+        }
+
+        long acumulado = chamado.getTempoPausadoSegundos() == null ? 0L : chamado.getTempoPausadoSegundos();
+        chamado.setTempoPausadoSegundos(acumulado + segundosParado);
+        chamado.setPausadoEm(null);
+    }
+
+    /**
+     * Traduz a transicao de status no tipo de evento que a trilha exibe.
+     *
+     * A ordem dos testes importa: pausa e retomada vem antes de encerramento porque
+     * PAUSADO -> FECHADO e um fechamento, mas FECHADO -> EM_ANDAMENTO ja e reabertura.
+     */
+    private TipoEventoChamado tipoDaTransicao(StatusChamado anterior, StatusChamado novo) {
+        if (novo == StatusChamado.PAUSADO) {
+            return TipoEventoChamado.PAUSA;
+        }
+        if (anterior == StatusChamado.PAUSADO) {
+            return TipoEventoChamado.RETOMADA;
+        }
+        if (anterior.isEncerrado() && !novo.isEncerrado()) {
+            return TipoEventoChamado.REABERTURA;
+        }
+        if (novo.isEncerrado()) {
+            return TipoEventoChamado.RESOLUCAO;
+        }
+        return TipoEventoChamado.STATUS;
+    }
+
+    /**
+     * O texto que vai para a trilha.
+     *
+     * A observacao (o relato do atendente) tem prioridade: e o que ele escreveu PARA o
+     * historico. Quando ela vem vazia, a justificativa da reabertura ou a descricao da
+     * resolucao servem de conteudo -- um evento sem texto nenhum nao conta historia.
+     */
+    private String relatoDaTransicao(ChamadoStatusRequestDTO dto, boolean isReabertura, boolean isFechamentoNovo) {
+        if (dto.observacao() != null && !dto.observacao().isBlank()) {
+            return dto.observacao().trim();
+        }
+        if (isReabertura) {
+            return dto.justificativaReabertura();
+        }
+        if (isFechamentoNovo) {
+            return dto.descricaoResolucao();
+        }
+        return null;
     }
 
     @Transactional
@@ -297,12 +429,60 @@ public class ChamadoService {
         chamado.setNotaAvaliacao(dto.notaAvaliacao());
         chamado.setComentarioAvaliacao(dto.comentarioAvaliacao());
 
-        return converterParaResponseDTO(chamadoRepository.save(chamado));
+        Chamado chamadoAtualizado = chamadoRepository.save(chamado);
+
+        // A avaliacao nao mexe no status, entao entra na trilha sem transicao -- e o
+        // unico evento cujo autor e o solicitante, nao o suporte.
+        registrarEvento(chamadoAtualizado, chamadoAtualizado.getSolicitante(),
+                TipoEventoChamado.AVALIACAO, descricaoDaAvaliacao(dto.notaAvaliacao(), dto.comentarioAvaliacao()),
+                null, null, null, null);
+
+        return converterParaResponseDTO(chamadoAtualizado);
+    }
+
+    private String descricaoDaAvaliacao(Integer nota, String comentario) {
+        String texto = "Nota " + nota + " de 5";
+        return (comentario == null || comentario.isBlank()) ? texto : texto + " \u2014 " + comentario.trim();
+    }
+
+    /**
+     * Grava um evento da trilha.
+     *
+     * O responsavel e capturado do chamado no momento da gravacao, de proposito: e o
+     * retrato de quem atendia NAQUELE instante, e nao o responsavel atual. Sem isso, ler
+     * a trilha de um chamado que trocou de atendente atribuiria tudo ao ultimo deles.
+     */
+    private void registrarEvento(
+            Chamado chamado,
+            Usuario autor,
+            TipoEventoChamado tipo,
+            String descricao,
+            StatusChamado statusAnterior,
+            StatusChamado statusNovo,
+            NivelAtendente nivelAnterior,
+            NivelAtendente nivelNovo) {
+
+        HistoricoChamado evento = new HistoricoChamado();
+        evento.setChamado(chamado);
+        evento.setAutor(autor);
+        evento.setTipo(tipo);
+        evento.setDescricao(descricao);
+        evento.setStatusAnterior(statusAnterior);
+        evento.setStatusNovo(statusNovo);
+        evento.setNivelAnterior(nivelAnterior);
+        evento.setNivelNovo(nivelNovo);
+        evento.setResponsavel(chamado.getResponsavel());
+        evento.setDataEvento(LocalDateTime.now());
+
+        historicoChamadoRepository.save(evento);
     }
 
     private ChamadoResponseDTO converterParaResponseDTO(Chamado chamado) {
         String nomeResponsavel = (chamado.getResponsavel() != null) ? chamado.getResponsavel().getNome() : "Não atribuído";
         NivelAtendente nivelResponsavel = (chamado.getResponsavel() != null) ? chamado.getResponsavel().getNivelAntendente() : null;
+        // Null quando nao ha responsavel, e nao a string "Nao atribuido" do nome: e-mail
+        // ausente e ausencia de dado, nao um rotulo para a tela imprimir.
+        String emailResponsavel = (chamado.getResponsavel() != null) ? chamado.getResponsavel().getEmail() : null;
 
         Long equipId = chamado.getEquipamento() != null ? chamado.getEquipamento().getId() : null;
         String equipNome = chamado.getEquipamento() != null ? chamado.getEquipamento().getNome() : null;
@@ -315,6 +495,7 @@ public class ChamadoService {
                 chamado.getSolicitante().getEmail(),
                 chamado.getResponsavel() != null ? chamado.getResponsavel().getId() : null,
                 nomeResponsavel,
+                emailResponsavel,
                 nivelResponsavel,
                 chamado.getCategoria(),
                 chamado.getUrgencia(),
@@ -329,6 +510,8 @@ public class ChamadoService {
                 equipNome,
                 chamado.getSetor(),
                 chamado.getPrazoLimite(),
+                chamado.getPausadoEm(),
+                chamado.getTempoPausadoSegundos(),
                 chamado.getNotaAvaliacao(),
                 chamado.getComentarioAvaliacao()
         );
