@@ -1,7 +1,9 @@
 package com.example.helpdesk_backend.config;
 
+import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -10,15 +12,25 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 public class CorsConfig {
+
+    /**
+     * Origens liberadas. O default cobre o Vite local; em producao aponte
+     * CORS_ALLOWED_ORIGINS para o dominio do front hospedado (varias separadas por
+     * virgula). Antes a lista era fixa em localhost e o front publicado era bloqueado
+     * pelo navegador ao chamar a API.
+     */
+    @Value("${cors.allowed-origins:http://localhost:[*],http://127.0.0.1:[*]}")
+    private String allowedOrigins;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource(){
         CorsConfiguration configuration = new CorsConfiguration();
 
-        //Aceita chamadas de qualquer origem, método e cabeçalho como localhost(Vite: 5173, 3000, etc.), mas em produção isso deve ser restringido.
-        configuration.setAllowedOriginPatterns(List.of(
-            "http://localhost:[*]",
-            "http://127.0.0.1:[*]"
-        ));
+        configuration.setAllowedOriginPatterns(
+            Arrays.stream(allowedOrigins.split(","))
+                  .map(String::trim)
+                  .filter(origem -> !origem.isEmpty())
+                  .toList());
 
         //Métodos HTTP liberados para o FrontEnd
         configuration.setAllowedMethods(List.of(
