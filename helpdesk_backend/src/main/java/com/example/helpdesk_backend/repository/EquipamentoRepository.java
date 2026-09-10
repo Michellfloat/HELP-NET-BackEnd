@@ -10,4 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface EquipamentoRepository extends JpaRepository<Equipamento, Long> {
     Page<Equipamento> findAllByAtivoTrue(Pageable pageable);
     Page<Equipamento> findByAtivoTrueAndSetorLocalizado(Setor setor, Pageable pageable);
+
+    boolean existsByPatrimonio(String patrimonio);
 }
