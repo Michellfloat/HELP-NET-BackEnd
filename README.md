@@ -26,50 +26,21 @@ cd helpdesk-backend
 Crie um arquivo `.env` na raiz do projeto ou configure diretamente no `src/main/resources/application.properties` as seguintes variáveis vitais:
 
 ```properties
-# ===================================================================
-# AMBIENTE & PERFIL SPRING
-# ===================================================================
+# Configurações do Banco de Dados
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/helpdesk_db
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=sua_senha_segura
+SPRING_JPA_HIBERNATE_DDL_AUTO=update
 
-SPRING_PROFILES_ACTIVE=prod
+# Configurações de Segurança (JWT)
+# Chave secreta de no mínimo 32 bytes para assinatura HMAC-SHA
+API_SECURITY_TOKEN_SECRET=helpdesk_secret_key_32_bytes_min_length_for_hmac_sha
+# Tempo de expiração em milissegundos (Ex: 86400000 para 24h)
+API_SECURITY_TOKEN_EXPIRATION=86400000
 
-# ===================================================================
-# BANCO DE DADOS(PostgreSQL / Render/ Neon/ Supabase / outra aplicação)
-# ===================================================================
-# URL JDBC do PostgreSQL. Na Render/Koyeb/Railway, use a String formatada como:
-# jdbc:postgresql://HOST:PORTA/NOME_DO_BANCO
-DATABASE_URL=jdbc:postgresql://localhost:5432/helpdesk_db
-DB_USER=postgres
-DB_PASS=sua_senha_segura_aqui
-
-# Estratégia DDL do Hibernate ('update' ou 'validate' para produção, mais recomendado o 'validate')
-DDL_AUTO=update
-
-# ===================================================================
-# SEGURANÇA & JWT
-# ===================================================================
-# Chave secreta para assinatura HMAC-SHA (mínimo de 32 caracteres/Bytes)
-JWT_SECRET=helpdesk_secret_key_32_bytes_min_length_for_hmac_sha
-
-# Tempo de expiração em milissegundos(Ex: 86400000 = 24 horas)
-JWT_EXPIRATION=86400000
-
-# ===================================================================
-# CORS (Integração com o Front-end)
-# ===================================================================
-# Domínio Público do Front-end hospedado (ex: Vercel). Múltiplos separados por vírgula.
-CORS_ALLOWED_ORIGINS=https://seu-front.vercel/qualquer.plataforma.app
-
-# ===================================================================
-# SEED DO ADMINISTRADOR INICIAL
-# ===================================================================
-ADMIN_EMAIL=admin@helpdesk.com
-ADMIN_SENHA=SuaSenhaAdminSuperSegura123!
-
-# ===================================================================
-# CONFIGURAÇÕES DE UPLOAD (ANEXOS)
-# ===================================================================
-MAX_FILE_SIZE=10MB
-MAX_REQUEST_SIZE=10MB
+# Configurações de Upload de Anexos
+SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=10MB
+SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=10MB
 ```
 
 ### 3. Instalação de Dependências

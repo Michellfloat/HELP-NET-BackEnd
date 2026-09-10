@@ -1,5 +1,8 @@
-# Etapa 1: Build da aplicação (compilação)
-FROM maven:3.9.4-eclipse-temurin-17 AS build
+# Etapa 1: Build da aplicacao (compilacao)
+# JDK 21: o pom declara <java.version>21</java.version>. Com a imagem 17 anterior o
+# build falhava ao compilar com --release 21, e o runtime levantaria
+# UnsupportedClassVersionError -- a imagem nunca chegou a ser construivel.
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # Copia os arquivos de dependência primeiro (otimiza o cache do Docker)
@@ -11,7 +14,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Etapa 2: Execução (Imagem menor e mais segura)
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Pega o .jar gerado na etapa 1 e joga para a etapa atual

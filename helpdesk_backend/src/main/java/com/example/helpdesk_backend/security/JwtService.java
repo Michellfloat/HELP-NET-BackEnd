@@ -6,7 +6,10 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PostConstruct;
 
 import com.example.helpdesk_backend.model.Usuario;
 
@@ -22,9 +25,42 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class JwtService {
 
+    // Valor publicamente conhecido (esta no repositorio): serve para o dia a dia de
+    // desenvolvimento e e recusado em producao por validarConfiguracao().
+    private static final String SEGREDO_PADRAO = "helpdesk_secret_key_32_bytes_min_length_for_hmac_sha";
+
     //Chave secreta definida no application.properties ou valor default para o Desenvolvimento
     @Value("${api.security.token.secret:helpdesk_secret_key_32_bytes_min_length_for_hmac_sha}")
     private String secretKey;
+
+    private final Environment environment;
+
+    public JwtService(Environment environment) {
+        this.environment = environment;
+    }
+
+    /**
+     * Falha o boot em producao se o segredo nao tiver sido trocado. Antes o default
+     * ficava valendo em silencio, e qualquer pessoa com acesso ao repositorio podia
+     * forjar um token de ADMIN valido no ambiente publicado.
+     */
+    @PostConstruct
+    void validarConfiguracao() {
+        boolean producao = environment.matchesProfiles("prod");
+
+        if (producao && SEGREDO_PADRAO.equals(secretKey)) {
+            throw new IllegalStateException(
+                    "JWT_SECRET nao configurado: o profile prod nao pode subir com o segredo padrao do repositorio.");
+        }
+
+        if (secretKey.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("JWT_SECRET precisa ter ao menos 32 bytes para HMAC-SHA256.");
+        }
+
+        if (!producao && SEGREDO_PADRAO.equals(secretKey)) {
+            log.warn("Usando o segredo JWT padrao de desenvolvimento. Defina JWT_SECRET antes de publicar.");
+        }
+    }
 
     @Value("${api.security.token.expiration:86400000}") //86400000 = 24 horas em milisegundos
     private long expirationTime;
