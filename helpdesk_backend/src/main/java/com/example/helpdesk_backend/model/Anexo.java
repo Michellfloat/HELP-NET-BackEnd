@@ -11,6 +11,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -39,8 +42,14 @@ public class Anexo {
     // @Column(nullable = false)
     // private String caminhoArquivo;
 
+    // columnDefinition = "LONGBLOB" e tipo do MySQL: no profile prod (PostgreSQL) o
+    // Hibernate emitia "dados_arquivo LONGBLOB" e o banco recusava, entao a aplicacao
+    // nao iniciava em producao. VARBINARY + length maximo deixa o dialeto escolher:
+    // longblob no MySQL (identico a coluna que ja existe, sem migracao) e bytea no
+    // Postgres. Sem o length o Hibernate cai em tinyblob (255 bytes) / oid -- ambos errados.
     @Lob
-    @Column(name = "dados_arquivo", columnDefinition = "LONGBLOB") // O columnDefinition varia (LONGBLOB no MySQL, BYTEA no Postgres)
+    @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(name = "dados_arquivo", length = Integer.MAX_VALUE)
     private byte[] dados;
 
     @Column(nullable = false)
