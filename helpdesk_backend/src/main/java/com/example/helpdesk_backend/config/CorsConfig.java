@@ -14,12 +14,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class CorsConfig {
 
     /**
-     * Origens liberadas. O default cobre o Vite local; em producao aponte
-     * CORS_ALLOWED_ORIGINS para o dominio do front hospedado (varias separadas por
-     * virgula). Antes a lista era fixa em localhost e o front publicado era bloqueado
-     * pelo navegador ao chamar a API.
+     * Origens liberadas. O default cobre o Vite local e qualquer preview/deploy da Vercel.
+     * Em produção, a variável CORS_ALLOWED_ORIGINS pode sobrescrever isso se necessário.
      */
-    @Value("${cors.allowed-origins:http://localhost:[*],http://127.0.0.1:[*]}")
+    @Value("${cors.allowed-origins:http://localhost:[*],http://127.0.0.1:[*],https://*.vercel.app}")
     private String allowedOrigins;
 
     @Bean
