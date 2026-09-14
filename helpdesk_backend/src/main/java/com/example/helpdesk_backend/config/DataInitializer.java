@@ -5,10 +5,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.example.helpdesk_backend.model.Equipamento;
 import com.example.helpdesk_backend.model.Usuario;
 import com.example.helpdesk_backend.model.enums.NivelAtendente;
 import com.example.helpdesk_backend.model.enums.Perfil;
 import com.example.helpdesk_backend.model.enums.Setor;
+import com.example.helpdesk_backend.model.enums.Urgencia;
+import com.example.helpdesk_backend.repository.EquipamentoRepository;
 import com.example.helpdesk_backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -18,24 +21,28 @@ import lombok.RequiredArgsConstructor;
  *
  * Duas coisas separadas moram aqui, e so agora com nomes diferentes:
  *
- * - O ADMIN e o bootstrap do sistema. Precisa existir em TODO ambiente, senao nao ha
- *   por onde entrar depois do deploy. Antes vinha com senha fixa no codigo; agora
- *   e-mail e senha saem de `app.admin.*`, entao producao usa ADMIN_SENHA e o
- *   repositorio deixa de carregar a credencial de um ambiente publicado.
+ * - O ADMIN e o bootstrap do sistema. Precisa existir em TODO ambiente, senao
+ * nao ha
+ * por onde entrar depois do deploy. Antes vinha com senha fixa no codigo; agora
+ * e-mail e senha saem de `app.admin.*`, entao producao usa ADMIN_SENHA e o
+ * repositorio deixa de carregar a credencial de um ambiente publicado.
  *
- * - Os tres usuarios de demonstracao (solicitante, atendente III e atendente I) sao
- *   dados de teste, com senha conhecida e escrita aqui. Ficam atras de
- *   `app.seed.demo`, desligado em producao.
+ * - Os tres usuarios de demonstracao (solicitante, atendente III e atendente I)
+ * sao
+ * dados de teste, com senha conhecida e escrita aqui. Ficam atras de
+ * `app.seed.demo`, desligado em producao.
  *
  * A separacao existe porque desligar o arquivo inteiro em producao -- que era a
- * alternativa -- resolveria as senhas de demonstracao criando um problema pior: um
+ * alternativa -- resolveria as senhas de demonstracao criando um problema pior:
+ * um
  * ambiente publicado sem nenhum usuario, impossivel de acessar.
  */
 @Component
 @RequiredArgsConstructor
-public class DataInitializer implements CommandLineRunner{
+public class DataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EquipamentoRepository equipamentoRepository;
 
     @Value("${app.admin.email:admin@helpdesk.com}")
     private String adminEmail;
@@ -58,9 +65,10 @@ public class DataInitializer implements CommandLineRunner{
         criarUsuarioComumSeNaoExistir();
         criarAtendenteNivelIIISeNaoExistir();
         criarAtendenteNivelISeNaoExistir();
+        criarEquipamentosIniciaisSeNaoExistirem();
     }
 
-    private void criarAdminSeNaoExistir(){
+    private void criarAdminSeNaoExistir() {
         if (usuarioRepository.findByEmail(adminEmail).isEmpty()) {
             Usuario admin = new Usuario();
             admin.setNome("Administrador do Sistema");
@@ -77,7 +85,7 @@ public class DataInitializer implements CommandLineRunner{
         }
     }
 
-    private void criarUsuarioComumSeNaoExistir(){
+    private void criarUsuarioComumSeNaoExistir() {
         if (usuarioRepository.findByEmail("eri.matsunaga@helpdesk.com").isEmpty()) {
             Usuario usuario = new Usuario();
             usuario.setNome("Eri Matsunaga");
@@ -92,8 +100,8 @@ public class DataInitializer implements CommandLineRunner{
         }
     }
 
-    private void criarAtendenteNivelIIISeNaoExistir(){
-        if(usuarioRepository.findByEmail("klein.moretti@helpdesk.com").isEmpty()){
+    private void criarAtendenteNivelIIISeNaoExistir() {
+        if (usuarioRepository.findByEmail("klein.moretti@helpdesk.com").isEmpty()) {
             Usuario atendente = new Usuario();
             atendente.setNome("Klein Moretti");
             atendente.setEmail("klein.moretti@helpdesk.com");
@@ -121,6 +129,34 @@ public class DataInitializer implements CommandLineRunner{
 
             usuarioRepository.save(atendente);
             System.out.println(">>> ATENDENTE NIVEL I CRIADO: tive.korendu@helpdesk.com / Media123 <<<");
+        }
+    }
+
+    private void criarEquipamentosIniciaisSeNaoExistirem() {
+        if (!equipamentoRepository.existsByPatrimonio("EQP-SER-001")) {
+            Equipamento servidor = new Equipamento();
+            servidor.setPatrimonio("EQP-SER-001");
+            servidor.setNome("Servidor Principal Dell PowerEdge T440");
+            servidor.setMarca("Dell");
+            servidor.setSetorLocalizado(Setor.DESENVOLVIMENTO);
+            servidor.setUrgencia(Urgencia.CRITICA);
+            servidor.setAtivo(true);
+
+            equipamentoRepository.save(servidor);
+            System.out.println(">>> EQUIPAMENTO CRÍTICO CRIADO: EQP-SER-001 (Servidor Principal) <<<");
+        }
+
+        if (!equipamentoRepository.existsByPatrimonio("EQP-DEV-002")) {
+            Equipamento computadorPleno = new Equipamento();
+            computadorPleno.setPatrimonio("EQP-DEV-002");
+            computadorPleno.setNome("Workstation ThinkCentre M70q");
+            computadorPleno.setMarca("Lenovo");
+            computadorPleno.setSetorLocalizado(Setor.DESENVOLVIMENTO);
+            computadorPleno.setUrgencia(Urgencia.MEDIA);
+            computadorPleno.setAtivo(true);
+
+            equipamentoRepository.save(computadorPleno);
+            System.out.println(">>> EQUIPAMENTO MÉDIO CRIADO: EQP-DEV-002 (Workstation Pleno) <<<");
         }
     }
 }
