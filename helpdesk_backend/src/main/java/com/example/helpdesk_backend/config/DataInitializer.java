@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
  *
  * Duas coisas separadas moram aqui, e so agora com nomes diferentes:
  *
- * - O ADMIN e o bootstrap do sistema. Precisa existir em TODO ambiente, senao
+ * - O ADMIN e o bootstrap do sistema. Precisa existir em Todo ambiente, senao
  * nao ha
  * por onde entrar depois do deploy. Antes vinha com senha fixa no codigo; agora
  * e-mail e senha saem de `app.admin.*`, entao producao usa ADMIN_SENHA e o
